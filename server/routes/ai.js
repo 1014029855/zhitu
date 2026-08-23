@@ -1,0 +1,23 @@
+const router = require('express').Router()
+const { authenticateToken } = require('../middleware/auth')
+const { body } = require('express-validator')
+const { handleErrors } = require('../middleware/validate')
+const aiCtrl = require('../controllers/aiController')
+
+// Chat conversation CRUD
+router.get('/ai/conversations', authenticateToken, aiCtrl.listConversations)
+router.get('/ai/conversations/:id', authenticateToken, aiCtrl.getConversation)
+router.delete('/ai/conversations/:id', authenticateToken, aiCtrl.deleteConversation)
+router.put('/ai/conversations/:id/title', authenticateToken, aiCtrl.updateTitle)
+
+// Chat with streaming
+router.post('/ai/chat', authenticateToken, aiCtrl.chat)
+
+// Code judge
+router.post('/ai/judge', authenticateToken, [
+  body('code').isLength({ min: 1, max: 50000 }),
+  body('language').isIn(['c++', 'java', 'python']),
+  body('exerciseId').isInt()
+], handleErrors, aiCtrl.judge)
+
+module.exports = router

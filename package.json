@@ -1,0 +1,56 @@
+{
+  "name": "knowledge-platform-backend",
+  "version": "1.0.0",
+  "description": "大学生知识通识平台后端API服务",
+  "main": "server/index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "vite --config vite.config.js",
+    "frontend": "vite --config vite.config.js",
+    "build": "vite build",
+    "dev:check": "node dev-check.js",
+    "dev:frontend": "vite --config vite.config.js",
+    "dev:start": "node dev-start.js",
+    "dev:help": "node dev-start.js",
+    "test": "node --test --test-concurrency=1"
+  },
+  "devDependencies": {
+    "vite": "^6.4.3"
+  },
+  "keywords": [
+    "education",
+    "knowledge",
+    "platform",
+    "express",
+    "nodejs"
+  ],
+  "author": "Knowledge Platform Team",
+  "license": "MIT",
+  "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.7",
+    "axios": "^1.17.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.10.1",
+    "body-parser": "^2.2.0",
+    "bootstrap": "^5.3.8",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.3.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "lucide-vue-next": "^0.577.0",
+    "monaco-editor": "^0.55.1",
+    "multer": "^2.0.2",
+    "svg-captcha": "^1.4.0",
+    "three": "^0.184.0",
+    "vue": "^3.5.38",
+    "vue-router": "^5.1.0"
+  }
+}

@@ -1,0 +1,11 @@
+const router = require('express').Router()
+const { authenticateToken } = require('../middleware/auth')
+const ctrl = require('../controllers/skillController')
+router.use(authenticateToken)
+router.get('/skills/categories', ctrl.categories)
+router.post('/skills/search', ctrl.search)
+router.get('/skills/:id', ctrl.detail)
+router.get('/skills', ctrl.list)
+router.get('/skill/progress/:id', ctrl.getProgress)
+router.post('/skill/progress', ctrl.saveProgress)
+module.exports = router

@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Environment secrets
+.env
+.env.local
+.env.production.local
+
+# Database files
+data/*.db*
+data/*.sqlite*
+*.db
+*.db-shm
+*.db-wal
+
+# Archive/backup
+*.rar
+*.zip
+
+# Build output
+dist/
+.vite/
+
+# IDE
+.idea/
+.vscode/
+.trae/
+.superpowers/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Uploads (user-generated files)
+uploads/
+
+# Logs
+*.log
+.server-*.txt
+.proxy-*.txt
+tmp-api-check.*.log
+npm-debug.log*
+
+# Generated drafts and duplicate working copies
+output/
+Q1.1/
+template_unpacked/
+template_content.md
