@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const { authenticateToken } = require('../middleware/auth')
-const { body } = require('express-validator')
+const { body, query } = require('express-validator')
 const { handleErrors } = require('../middleware/validate')
 const { aiLimiter, judgeLimiter } = require('../middleware/rateLimits')
 const aiCtrl = require('../controllers/aiController')
@@ -15,7 +15,9 @@ router.put('/ai/conversations/:id/title', authenticateToken, aiCtrl.updateTitle)
 router.post('/ai/chat', authenticateToken, aiLimiter, aiCtrl.chat)
 
 // Code judge
-router.get('/ai/judge/status', authenticateToken, aiCtrl.judgeStatus)
+router.get('/ai/judge/status', authenticateToken, [
+  query('language').optional().isIn(['c++', 'java', 'python'])
+], handleErrors, aiCtrl.judgeStatus)
 router.post('/ai/judge', authenticateToken, judgeLimiter, [
   body('code').isLength({ min: 1, max: 50000 }),
   body('language').isIn(['c++', 'java', 'python']),

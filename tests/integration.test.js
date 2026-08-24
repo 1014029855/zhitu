@@ -136,7 +136,7 @@ test('authentication and growth loop work end to end', async () => {
     })
   })
   assert.equal(unsafeSubmission.status, 503)
-  assert.equal(unsafeSubmission.json.code, 'CODE_EXECUTION_UNAVAILABLE')
+  assert.equal(unsafeSubmission.json.code, 'CODE_EXECUTION_DISABLED')
   assert.equal(fs.existsSync(markerPath), false)
 
   const admin = await login('lufuping', 'lu1203')

@@ -49,7 +49,7 @@ export function useRequest() {
 
   return {
     get: (url, params) => instance.get(url, { params }),
-    post: (url, data) => instance.post(url, data),
+    post: (url, data, config) => instance.post(url, data, config),
     put: (url, data) => instance.put(url, data),
     del: (url) => instance.delete(url),
     toastMessage,

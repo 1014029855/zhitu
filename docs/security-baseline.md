@@ -4,9 +4,11 @@
 
 ## 代码判题
 
-项目不再使用 `child_process` 在宿主机直接运行学生代码。`/api/ai/judge` 默认返回 `503` 和错误码 `CODE_EXECUTION_UNAVAILABLE`，前端会显示“本地判题已关闭”。
+项目不再在宿主机直接运行学生代码。判题使用一次性 Docker 容器，并限制网络、文件系统、权限、CPU、内存、进程数、输出和运行时间。
 
-重新开放判题前，必须接入独立的隔离执行服务，并至少限制 CPU、内存、运行时间、进程数、磁盘和网络。不要恢复旧的本机 `spawn` 实现。
+Docker 未启动或对应语言镜像未准备时，`/api/ai/judge` 会安全地返回 `503`。启动 Docker Desktop 后运行 `npm run sandbox:setup` 可准备 Python；C++ 和 Java 分别使用 `npm run sandbox:setup -- c++`、`npm run sandbox:setup -- java` 按需准备，也可以运行 `npm run sandbox:setup:all` 一次准备全部语言。
+
+每次提交只挂载一个临时源码目录；源码只读，编译产物目录在执行阶段也只读。容器不挂载项目目录、数据库、环境变量或 Docker socket，执行结束后自动删除。
 
 ## 默认账号
 

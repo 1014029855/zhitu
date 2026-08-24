@@ -22,7 +22,7 @@
       </aside>
 
       <main class="editor-panel">
-        <CodeEditor v-model="code" :language="language" @update:language="language = $event" />
+        <CodeEditor v-model="code" :language="language" @update:language="setLanguage" />
         <div class="run-actions">
           <button class="btn btn--primary" type="button" @click="submitCode" :disabled="submitting || !code.trim() || !judgeAvailable">
             {{ submitLabel }}
@@ -68,8 +68,25 @@ const aiContext = ref({})
 
 const submitLabel = computed(() => {
   if (submitting.value) return '判题中'
-  return judgeAvailable.value ? '提交运行' : '本地判题已关闭'
+  return judgeAvailable.value ? '提交运行' : '判题暂不可用'
 })
+
+async function refreshJudgeStatus() {
+  judgeAvailable.value = false
+  judgeMessage.value = '正在检查判题服务'
+  try {
+    const status = await get('/ai/judge/status', { language: language.value })
+    judgeAvailable.value = Boolean(status?.available)
+    judgeMessage.value = status?.available ? '' : (status?.message || '判题服务当前不可用')
+  } catch (e) {
+    judgeMessage.value = e.response?.data?.message || '无法确认判题服务状态'
+  }
+}
+
+function setLanguage(value) {
+  language.value = value
+  refreshJudgeStatus()
+}
 
 function openAiDrawer() {
   aiContext.value = {
@@ -87,19 +104,14 @@ function diffLabel(d) {
 
 onMounted(async () => {
   try {
-    const [exerciseData, status] = await Promise.all([
-      get(`/exercises/${route.params.id}`),
-      get('/ai/judge/status')
-    ])
-    exercise.value = exerciseData
-    judgeAvailable.value = Boolean(status?.available)
-    judgeMessage.value = status?.available ? '' : (status?.message || '判题服务当前不可用')
+    exercise.value = await get(`/exercises/${route.params.id}`)
     if (exercise.value) {
       code.value = exercise.value.template_code || ''
       if (exercise.value.language && exercise.value.language !== 'all') {
         language.value = exercise.value.language
       }
     }
+    await refreshJudgeStatus()
   } catch (e) {
     console.error(e)
     judgeMessage.value = e.response?.data?.message || '无法确认判题服务状态'
@@ -115,7 +127,7 @@ async function submitCode() {
       code: code.value,
       language: language.value,
       exerciseId: exercise.value.id
-    })
+    }, { timeout: 45000 })
     judgeResult.value = result
   } catch (e) {
     console.error(e)

@@ -119,16 +119,16 @@ function cleanAiOutput(text) {
 }
 
 exports.judge = async (req, res) => {
-  const sandboxStatus = sandboxService.getStatus()
+  const { code, language, exerciseId } = req.body
+  const sandboxStatus = await sandboxService.getStatus(language)
   if (!sandboxStatus.available) {
     return res.status(503).json({
       success: false,
-      code: 'CODE_EXECUTION_UNAVAILABLE',
+      code: sandboxStatus.code || 'CODE_EXECUTION_UNAVAILABLE',
       message: sandboxStatus.message
     })
   }
 
-  const { code, language, exerciseId } = req.body
   const question = exerciseModel.findById(exerciseId)
   if (!question) return res.status(404).json({ success: false, message: '题目不存在' })
   const testCases = JSON.parse(question.test_cases || '[]')
@@ -153,6 +153,7 @@ exports.judge = async (req, res) => {
   }
 }
 
-exports.judgeStatus = (req, res) => {
-  res.json({ success: true, data: sandboxService.getStatus() })
+exports.judgeStatus = async (req, res) => {
+  const status = await sandboxService.getStatus(req.query.language || null)
+  res.json({ success: true, data: status })
 }
