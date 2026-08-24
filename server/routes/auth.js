@@ -1,9 +1,10 @@
 const router = require('express').Router()
 const { body } = require('express-validator')
 const { handleErrors } = require('../middleware/validate')
+const { loginLimiter, accountLimiter, captchaLimiter } = require('../middleware/rateLimits')
 const ctrl = require('../controllers/authController')
 
-router.post('/register', [
+router.post('/register', accountLimiter, [
   body('username').isLength({ min: 3, max: 20 }).matches(/^[a-zA-Z0-9_]+$/),
   body('email').isEmail(),
   body('password').isLength({ min: 6 }),
@@ -13,25 +14,25 @@ router.post('/register', [
   body('captcha').isLength({ min: 4, max: 4 })
 ], handleErrors, ctrl.register)
 
-router.post('/login', [
+router.post('/login', loginLimiter, [
   body('username').notEmpty(),
   body('password').notEmpty(),
   body('captchaId').notEmpty(),
   body('captcha').isLength({ min: 4, max: 4 })
 ], handleErrors, ctrl.login)
 
-router.post('/password-reset/request', [
+router.post('/password-reset/request', accountLimiter, [
   body('identifier').trim().notEmpty(),
   body('captchaId').notEmpty(),
   body('captcha').isLength({ min: 4, max: 4 })
 ], handleErrors, ctrl.requestPasswordReset)
 
-router.post('/password-reset/confirm', [
+router.post('/password-reset/confirm', accountLimiter, [
   body('token').isLength({ min: 32, max: 128 }),
   body('password').isLength({ min: 6, max: 128 })
 ], handleErrors, ctrl.resetPassword)
 
-router.get('/captcha', ctrl.captcha)
-router.get('/check-username/:username', ctrl.checkUsername)
+router.get('/captcha', captchaLimiter, ctrl.captcha)
+router.get('/check-username/:username', captchaLimiter, ctrl.checkUsername)
 
 module.exports = router

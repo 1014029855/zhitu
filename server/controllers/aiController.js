@@ -119,6 +119,15 @@ function cleanAiOutput(text) {
 }
 
 exports.judge = async (req, res) => {
+  const sandboxStatus = sandboxService.getStatus()
+  if (!sandboxStatus.available) {
+    return res.status(503).json({
+      success: false,
+      code: 'CODE_EXECUTION_UNAVAILABLE',
+      message: sandboxStatus.message
+    })
+  }
+
   const { code, language, exerciseId } = req.body
   const question = exerciseModel.findById(exerciseId)
   if (!question) return res.status(404).json({ success: false, message: '题目不存在' })
@@ -137,6 +146,13 @@ exports.judge = async (req, res) => {
     const review = growthModel.recordExerciseResult(req.user.userId, question.id, execResult.passed)
     res.json({ success: true, data: { id: subId, status, testResults: execResult.testResults, error: execResult.error, aiFeedback, review } })
   } catch (e) {
+    if (e instanceof sandboxService.SandboxUnavailableError) {
+      return res.status(503).json({ success: false, code: e.code, message: e.message })
+    }
     res.status(500).json({ success: false, message: '判题服务出错：' + e.message })
   }
+}
+
+exports.judgeStatus = (req, res) => {
+  res.json({ success: true, data: sandboxService.getStatus() })
 }

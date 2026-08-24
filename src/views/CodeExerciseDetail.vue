@@ -24,8 +24,8 @@
       <main class="editor-panel">
         <CodeEditor v-model="code" :language="language" @update:language="language = $event" />
         <div class="run-actions">
-          <button class="btn btn--primary" type="button" @click="submitCode" :disabled="submitting || !code.trim()">
-            {{ submitting ? '判题中' : '提交运行' }}
+          <button class="btn btn--primary" type="button" @click="submitCode" :disabled="submitting || !code.trim() || !judgeAvailable">
+            {{ submitLabel }}
           </button>
           <button class="btn" type="button" @click="code = exercise.template_code || ''">重置代码</button>
           <button class="btn btn--primary" type="button" @click="openAiDrawer" v-if="judgeResult">
@@ -33,6 +33,7 @@
             问 AI
           </button>
         </div>
+        <p v-if="judgeMessage" class="execution-notice" role="status">{{ judgeMessage }}</p>
       </main>
     </div>
 
@@ -41,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { MessageCircle } from 'lucide-vue-next'
 import AiDrawer from '../components/AiDrawer.vue'
 import { useRoute } from 'vue-router'
@@ -60,8 +61,15 @@ const language = ref('python')
 const loading = ref(true)
 const submitting = ref(false)
 const judgeResult = ref(null)
+const judgeAvailable = ref(false)
+const judgeMessage = ref('正在检查判题服务')
 const aiVisible = ref(false)
 const aiContext = ref({})
+
+const submitLabel = computed(() => {
+  if (submitting.value) return '判题中'
+  return judgeAvailable.value ? '提交运行' : '本地判题已关闭'
+})
 
 function openAiDrawer() {
   aiContext.value = {
@@ -79,7 +87,13 @@ function diffLabel(d) {
 
 onMounted(async () => {
   try {
-    exercise.value = await get(`/exercises/${route.params.id}`)
+    const [exerciseData, status] = await Promise.all([
+      get(`/exercises/${route.params.id}`),
+      get('/ai/judge/status')
+    ])
+    exercise.value = exerciseData
+    judgeAvailable.value = Boolean(status?.available)
+    judgeMessage.value = status?.available ? '' : (status?.message || '判题服务当前不可用')
     if (exercise.value) {
       code.value = exercise.value.template_code || ''
       if (exercise.value.language && exercise.value.language !== 'all') {
@@ -88,6 +102,7 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error(e)
+    judgeMessage.value = e.response?.data?.message || '无法确认判题服务状态'
   } finally {
     loading.value = false
   }
@@ -104,6 +119,7 @@ async function submitCode() {
     judgeResult.value = result
   } catch (e) {
     console.error(e)
+    judgeMessage.value = e.response?.data?.message || '代码提交失败，请稍后重试'
   } finally {
     submitting.value = false
   }
@@ -218,6 +234,13 @@ async function submitCode() {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.execution-notice {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
 }
 
 @media (max-width: 980px) {

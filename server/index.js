@@ -35,7 +35,7 @@ app.use('/api/', limiter)
 createTables(db)
 seedData(db)
 try { require('./db/seed-courses') } catch (e) { console.error('Seed courses error:', e.message) }
-console.log(isNew ? 'Database initialized with seed data.' : 'Database checked and default accounts are ready.')
+console.log(isNew ? 'Database initialized with seed data.' : 'Database checked and seed data is ready.')
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: '服务运行正常' })

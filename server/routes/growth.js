@@ -2,6 +2,7 @@ const router = require('express').Router()
 const { body, param, query } = require('express-validator')
 const { authenticateToken } = require('../middleware/auth')
 const { handleErrors } = require('../middleware/validate')
+const { aiLimiter } = require('../middleware/rateLimits')
 const ctrl = require('../controllers/growthController')
 
 const contentTypes = ['competition', 'skill', 'exercise', 'paper']
@@ -83,7 +84,7 @@ router.post('/achievements', [
   body('isPublic').optional().isBoolean()
 ], handleErrors, ctrl.createAchievement)
 
-router.post('/ai/competition-plan/:competitionId', param('competitionId').isInt({ min: 1 }), handleErrors, ctrl.previewCompetitionPlan)
+router.post('/ai/competition-plan/:competitionId', aiLimiter, param('competitionId').isInt({ min: 1 }), handleErrors, ctrl.previewCompetitionPlan)
 router.post('/ai/confirm-plan', [
   body('plan').isObject(),
   body('plan.title').trim().isLength({ min: 1, max: 200 }),

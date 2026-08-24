@@ -2,6 +2,7 @@ const router = require('express').Router()
 const { authenticateToken } = require('../middleware/auth')
 const { body } = require('express-validator')
 const { handleErrors } = require('../middleware/validate')
+const { uploadLimiter } = require('../middleware/rateLimits')
 const multer = require('multer')
 const path = require('path')
 const ctrl = require('../controllers/userController')
@@ -16,10 +17,17 @@ const avatarStorage = multer.diskStorage({
 })
 const upload = multer({
   storage: avatarStorage,
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 5 },
   fileFilter: (req, file, cb) => {
-    const allowed = /\.(jpg|jpeg|png|gif|webp)$/i
-    cb(null, allowed.test(path.extname(file.originalname)))
+    const allowedTypes = new Map([
+      ['.jpg', 'image/jpeg'],
+      ['.jpeg', 'image/jpeg'],
+      ['.png', 'image/png'],
+      ['.gif', 'image/gif'],
+      ['.webp', 'image/webp']
+    ])
+    const ext = path.extname(file.originalname).toLowerCase()
+    cb(null, allowedTypes.get(ext) === file.mimetype)
   }
 })
 
@@ -38,6 +46,6 @@ router.put('/password', authenticateToken, [
   body('newPassword').isLength({ min: 6 }).withMessage('新密码至少6位')
 ], handleErrors, ctrl.changePassword)
 
-router.post('/avatar', authenticateToken, upload.single('avatar'), ctrl.uploadAvatar)
+router.post('/avatar', authenticateToken, uploadLimiter, upload.single('avatar'), ctrl.uploadAvatar)
 
 module.exports = router

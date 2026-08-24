@@ -30,27 +30,36 @@
   "author": "Knowledge Platform Team",
   "license": "MIT",
   "dependencies": {
-    "@vitejs/plugin-vue": "^6.0.7",
-    "axios": "^1.17.0",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "axios": "^1.19.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.1",
-    "body-parser": "^2.2.0",
     "bootstrap": "^5.3.8",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.2.1",
-    "express-validator": "^7.3.0",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "express-validator": "^7.3.2",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "lodash": "^4.17.21",
+    "jsonwebtoken": "^9.0.3",
     "lucide-vue-next": "^0.577.0",
-    "monaco-editor": "^0.55.1",
-    "multer": "^2.0.2",
+    "monaco-editor": "^0.56.0",
+    "multer": "^2.2.0",
     "svg-captcha": "^1.4.0",
     "three": "^0.184.0",
-    "vue": "^3.5.38",
-    "vue-router": "^5.1.0"
+    "vue": "^3.5.41",
+    "vue-router": "5.1.0"
+  },
+  "overrides": {
+    "dompurify": "^3.4.14",
+    "path-to-regexp": "^8.4.2",
+    "vue-router": {
+      "@babel/generator": {
+        ".": "8.0.0-rc.4",
+        "@babel/parser": "8.0.0-rc.4",
+        "@babel/types": "8.0.0-rc.4"
+      }
+    }
   }
 }

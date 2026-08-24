@@ -10,6 +10,7 @@ const projectRoot = path.resolve(__dirname, '..')
 let child
 let baseUrl
 let tempDir
+let port
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -75,10 +76,7 @@ async function waitForServer() {
   throw new Error('Timed out waiting for API server')
 }
 
-test.before(async () => {
-  const port = await getFreePort()
-  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'knowledge-platform-test-'))
-  baseUrl = `http://127.0.0.1:${port}`
+async function startServer() {
   child = spawn(process.execPath, ['server/index.js'], {
     cwd: projectRoot,
     env: {
@@ -92,13 +90,23 @@ test.before(async () => {
     stdio: ['ignore', 'pipe', 'pipe']
   })
   await waitForServer()
+}
+
+async function stopServer() {
+  if (!child || child.exitCode !== null) return
+  child.kill()
+  await new Promise(resolve => child.once('exit', resolve))
+}
+
+test.before(async () => {
+  port = await getFreePort()
+  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'knowledge-platform-test-'))
+  baseUrl = `http://127.0.0.1:${port}`
+  await startServer()
 })
 
 test.after(async () => {
-  if (child && child.exitCode === null) {
-    child.kill()
-    await new Promise(resolve => child.once('exit', resolve))
-  }
+  await stopServer()
   if (tempDir && path.basename(tempDir).startsWith('knowledge-platform-test-')) {
     fs.rmSync(tempDir, { recursive: true, force: true })
   }
@@ -112,6 +120,24 @@ test('authentication and growth loop work end to end', async () => {
   assert.equal(student.user.accountType, 'student')
   const token = student.token
   const headers = authHeaders(token)
+
+  const judgeStatus = await api('/api/ai/judge/status', { headers })
+  assert.equal(judgeStatus.status, 200)
+  assert.equal(judgeStatus.json.data.available, false)
+
+  const markerPath = path.join(tempDir, 'unsafe-code-ran.txt')
+  const unsafeSubmission = await api('/api/ai/judge', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      exerciseId: 1,
+      language: 'python',
+      code: `from pathlib import Path\nPath(r'${markerPath.replace(/\\/g, '\\\\')}').write_text('executed')`
+    })
+  })
+  assert.equal(unsafeSubmission.status, 503)
+  assert.equal(unsafeSubmission.json.code, 'CODE_EXECUTION_UNAVAILABLE')
+  assert.equal(fs.existsSync(markerPath), false)
 
   const admin = await login('lufuping', 'lu1203')
   assert.equal(admin.user.accountType, 'admin')
@@ -234,4 +260,9 @@ test('authentication and growth loop work end to end', async () => {
   assert.equal(resetConfirm.status, 200)
   const relogin = await login('student1', 'new-test-password')
   assert.equal(relogin.user.username, 'student1')
+
+  await stopServer()
+  await startServer()
+  const persistedLogin = await login('student1', 'new-test-password')
+  assert.equal(persistedLogin.user.username, 'student1')
 })

@@ -1,94 +1,44 @@
 const bcrypt = require('bcryptjs')
 
 module.exports = function seedData(db) {
-  const upsertDefaultUser = db.prepare(`
+  const shouldSeedDefaultUsers = process.env.NODE_ENV !== 'production' || process.env.SEED_DEFAULT_USERS === 'true'
+  const insertDefaultUser = db.prepare(`
     INSERT INTO users (username, email, password_hash, real_name, student_id, account_type, is_active)
     VALUES (@username, @email, @passwordHash, @realName, @studentId, @accountType, TRUE)
-    ON CONFLICT(username) DO UPDATE SET
-      email = excluded.email,
-      password_hash = excluded.password_hash,
-      real_name = excluded.real_name,
-      student_id = excluded.student_id,
-      account_type = excluded.account_type,
-      is_active = TRUE,
-      updated_at = CURRENT_TIMESTAMP
+    ON CONFLICT(username) DO NOTHING
   `)
 
-  upsertDefaultUser.run({
-    username: 'lufuping',
-    email: 'lufuping@platform.local',
-    passwordHash: bcrypt.hashSync('lu1203', 10),
-    realName: '管理员',
-    studentId: null,
-    accountType: 'admin'
-  })
+  if (shouldSeedDefaultUsers) {
+    insertDefaultUser.run({
+      username: 'lufuping',
+      email: 'lufuping@platform.local',
+      passwordHash: bcrypt.hashSync('lu1203', 10),
+      realName: '管理员',
+      studentId: null,
+      accountType: 'admin'
+    })
 
-  upsertDefaultUser.run({
-    username: 'student1',
-    email: 'student1@platform.local',
-    passwordHash: bcrypt.hashSync('123123123', 10),
-    realName: '默认学生',
-    studentId: 'student1',
-    accountType: 'student'
-  })
+    insertDefaultUser.run({
+      username: 'student1',
+      email: 'student1@platform.local',
+      passwordHash: bcrypt.hashSync('123123123', 10),
+      realName: '默认学生',
+      studentId: 'student1',
+      accountType: 'student'
+    })
 
-  upsertDefaultUser.run({
-    username: 'teacher',
-    email: 'teacher@platform.local',
-    passwordHash: bcrypt.hashSync('teacher123', 10),
-    realName: '示例教师',
-    studentId: null,
-    accountType: 'teacher'
-  })
+    insertDefaultUser.run({
+      username: 'teacher',
+      email: 'teacher@platform.local',
+      passwordHash: bcrypt.hashSync('teacher123', 10),
+      realName: '指导老师',
+      studentId: null,
+      accountType: 'teacher'
+    })
+  }
 
-  const normalizeDefaultUser = db.prepare(`
-    UPDATE users
-    SET real_name = @realName,
-        password_hash = @passwordHash,
-        account_type = @accountType,
-        is_active = TRUE,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE username = @username
-  `)
-
-  normalizeDefaultUser.run({
-    username: 'lufuping',
-    realName: '管理员',
-    passwordHash: bcrypt.hashSync('lu1203', 10),
-    accountType: 'admin'
-  })
-
-  normalizeDefaultUser.run({
-    username: 'student1',
-    realName: '默认学生',
-    passwordHash: bcrypt.hashSync('123123123', 10),
-    accountType: 'student'
-  })
-
-  normalizeDefaultUser.run({
-    username: 'teacher',
-    realName: '指导老师',
-    passwordHash: bcrypt.hashSync('teacher123', 10),
-    accountType: 'teacher'
-  })
-
-  // Check if data already exists
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count
-  if (userCount > 3) return
-
-  const insertUser = db.prepare(`
-    INSERT OR IGNORE INTO users (username, email, password_hash, real_name, account_type)
-    VALUES (?, ?, ?, ?, ?)
-  `)
-
-  const adminPassword = bcrypt.hashSync('admin123', 10)
-  insertUser.run('admin', 'admin@university.edu.cn', adminPassword, '系统管理员', 'admin')
-
-  const teacherPassword = bcrypt.hashSync('teacher123', 10)
-  insertUser.run('teacher', 'teacher@university.edu.cn', teacherPassword, '示例教师', 'teacher')
-
-  const studentPassword = bcrypt.hashSync('student123', 10)
-  insertUser.run('student', 'student@university.edu.cn', studentPassword, '示例学生', 'student')
+  const competitionCount = db.prepare('SELECT COUNT(*) as count FROM competitions').get().count
+  if (competitionCount > 0) return
 
   // Insert competitions
   const insertCompetition = db.prepare(`
