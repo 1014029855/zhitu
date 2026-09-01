@@ -77,7 +77,9 @@ async function refreshJudgeStatus() {
   try {
     const status = await get('/ai/judge/status', { language: language.value })
     judgeAvailable.value = Boolean(status?.available)
-    judgeMessage.value = status?.available ? '' : (status?.message || '判题服务当前不可用')
+    judgeMessage.value = status?.available
+      ? (status?.warning || '')
+      : (status?.message || '判题服务当前不可用')
   } catch (e) {
     judgeMessage.value = e.response?.data?.message || '无法确认判题服务状态'
   }

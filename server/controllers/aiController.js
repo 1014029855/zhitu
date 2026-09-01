@@ -146,6 +146,9 @@ exports.judge = async (req, res) => {
     const review = growthModel.recordExerciseResult(req.user.userId, question.id, execResult.passed)
     res.json({ success: true, data: { id: subId, status, testResults: execResult.testResults, error: execResult.error, aiFeedback, review } })
   } catch (e) {
+    if (e instanceof sandboxService.SandboxPolicyError) {
+      return res.status(400).json({ success: false, code: e.code, message: e.message })
+    }
     if (e instanceof sandboxService.SandboxUnavailableError) {
       return res.status(503).json({ success: false, code: e.code, message: e.message })
     }
