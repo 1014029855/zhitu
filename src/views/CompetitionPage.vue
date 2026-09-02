@@ -1,40 +1,38 @@
 <template>
-  <div class="page">
-    <section class="hero gradient-hero" style="min-height:auto;padding:48px 40px 40px;">
-      <div class="blur-orb blur-orb--green" style="width:200px;height:200px;top:-50px;right:-40px;opacity:0.2;"></div>
-      <p class="section-label">Competition</p>
-      <h1 class="page-heading" style="font-size:32px;">竞赛库</h1>
-      <p class="page-subtitle" style="margin-top:6px;">报名时间、竞赛方向、训练重点 — 先看清楚再出发。</p>
-    </section>
+  <div class="product-page competition-page">
+    <header class="product-header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">竞赛训练</p>
+        <h1>竞赛库</h1>
+        <p>先看能力要求和备赛阶段，再决定是否投入。每项竞赛都可以转成可执行的训练目标。</p>
+        <div class="product-header__meta"><span>数学建模</span><span>创新创业</span><span>程序设计</span></div>
+      </div>
+      <router-link to="/" class="btn btn--outline"><Target :size="16" />查看学习目标</router-link>
+    </header>
 
-    <section class="section" style="padding-top:0;">
-      <!-- Filters -->
-      <div class="toolbar">
-        <input v-model.trim="keyword" class="field__input" type="text" placeholder="搜索竞赛名称或关键词" />
+    <section>
+      <div class="product-toolbar">
+        <input v-model.trim="keyword" class="field__input product-toolbar__search" type="search" placeholder="搜索竞赛名称或关键词" />
         <select v-model="category" class="field__input">
           <option value="all">全部方向</option>
           <option value="数学建模">数学建模</option>
           <option value="创新创业">创新创业</option>
           <option value="程序设计">程序设计</option>
         </select>
+        <span class="product-toolbar__count">{{ filteredList.length }} 项竞赛</span>
       </div>
 
-      <!-- Grid -->
-      <div class="comp-grid">
+      <div class="product-list competition-list">
         <router-link v-for="(item, i) in filteredList" :key="item.id"
-          class="card comp-card"
-          :class="`animate-fade-up animate-fade-up--${Math.min(i + 1, 4)}`"
+          class="product-row competition-row"
           :to="`/competition/${item.id}`"
         >
-          <div class="comp-card__top">
-            <span class="pill">{{ item.category }}</span>
-            <span class="pill pill--active" v-if="item.level">{{ item.level }}</span>
-          </div>
-          <h2 class="comp-card__title">{{ item.title }}</h2>
-          <p class="comp-card__desc">{{ item.description?.slice(0, 80) || '查看报名时间、参赛规则与备赛路径。' }}</p>
-          <div class="comp-card__meta">
-            <span>{{ item.status || '关注中' }}</span>
-          </div>
+          <span class="product-row__index">{{ String(i + 1).padStart(2, '0') }}</span>
+          <span class="product-row__main"><strong>{{ item.title }}</strong><p>{{ item.description?.slice(0, 96) || '查看报名时间、参赛规则与备赛路径。' }}</p></span>
+          <span class="status-tag">{{ item.category }}</span>
+          <span v-if="item.level" class="product-row__meta">{{ item.level }}</span>
+          <span class="status-tag status-tag--green">{{ item.status || '关注中' }}</span>
+          <span class="product-row__action"><ArrowRight :size="17" /></span>
         </router-link>
       </div>
     </section>
@@ -43,6 +41,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { ArrowRight, Target } from 'lucide-vue-next'
 import { useRequest } from '../composables/useRequest'
 
 const { get } = useRequest()
@@ -74,14 +73,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: var(--bg-primary); }
-.section { max-width: 1080px; margin: 0 auto; padding: 0 40px 56px; }
-.toolbar { display: grid; grid-template-columns: 1fr 180px; gap: 12px; margin-bottom: 28px; }
-.comp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.comp-card { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
-.comp-card__top { display: flex; gap: 8px; }
-.comp-card__title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.25; }
-.comp-card__desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
-.comp-card__meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted); }
-@media (max-width: 780px) { .comp-grid { grid-template-columns: 1fr; } .toolbar { grid-template-columns: 1fr; } .section { padding: 0 20px 40px; } }
+.product-toolbar select { flex: 0 0 170px; width: 170px; }
+.competition-row { grid-template-columns: 34px minmax(280px, 1fr) 90px 70px 86px 20px; }
+@media (max-width: 820px) {
+  .competition-row { grid-template-columns: 28px minmax(0, 1fr) 78px 18px; }
+  .competition-row > :nth-child(4), .competition-row > :nth-child(5) { display: none; }
+  .product-toolbar select { width: 100%; flex-basis: auto; }
+}
 </style>

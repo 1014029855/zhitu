@@ -1,16 +1,12 @@
 <template>
   <div class="auth-scene">
-    <!-- Blur orbs -->
-    <div class="blur-orb blur-orb--green" style="width:320px;height:320px;top:-80px;left:-80px;opacity:0.25;"></div>
-    <div class="blur-orb blur-orb--purple" style="width:240px;height:240px;bottom:-60px;right:-60px;opacity:0.15;"></div>
-
     <div class="auth-card animate-scale-in">
       <!-- Logo -->
       <div class="auth-card__logo">
         <span class="auth-card__brand">知</span>
       </div>
       <h1 class="auth-card__title">大学生知识通识平台</h1>
-      <p class="auth-card__subtitle">竞赛、刷题、课程、论文，一个入口就够了。</p>
+      <p class="auth-card__subtitle">使用平台账号继续学习</p>
 
       <!-- Form -->
       <form class="auth-card__form" @submit.prevent="handleLogin">
@@ -112,21 +108,20 @@ onMounted(refreshCaptcha)
   position: relative; z-index: 1;
   width: 100%; max-width: 420px;
   background: var(--bg-white); border: 1px solid var(--border-primary);
-  border-radius: var(--radius-xl); padding: 44px 36px;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+  border-radius: 6px; padding: 40px 36px;
 }
 
 .auth-card__logo {
   display: flex; justify-content: center; margin-bottom: 16px;
 }
 .auth-card__brand {
-  font-family: var(--font-display); font-size: 44px; color: var(--text-primary); line-height: 1;
+  font-family: var(--font-brand); font-size: 42px; color: var(--text-primary); line-height: 1;
 }
 
 .auth-card__title {
   text-align: center;
   font-family: var(--font-heading); font-size: 22px; font-weight: 700;
-  color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px;
+  color: var(--text-primary); margin-bottom: 6px; letter-spacing: 0;
 }
 .auth-card__subtitle {
   text-align: center; font-size: 13px; color: var(--text-secondary);
@@ -153,7 +148,7 @@ onMounted(refreshCaptcha)
 .auth-card__quick { display: flex; gap: 8px; margin-top: 16px; }
 .auth-card__quick-btn {
   flex: 1; height: 34px; border: 1px solid var(--border-primary);
-  border-radius: var(--radius-pill); background: var(--bg-white);
+  border-radius: 4px; background: var(--bg-white);
   color: var(--text-secondary); font-size: 12px; font-weight: 500;
   transition: all 0.18s ease;
 }

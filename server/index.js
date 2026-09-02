@@ -35,6 +35,7 @@ app.use('/api/', limiter)
 createTables(db)
 seedData(db)
 try { require('./db/seed-courses') } catch (e) { console.error('Seed courses error:', e.message) }
+try { require('./db/seed-learning')(db) } catch (e) { console.error('Seed learning error:', e.message) }
 console.log(isNew ? 'Database initialized with seed data.' : 'Database checked and seed data is ready.')
 
 app.get('/api/health', (req, res) => {
@@ -46,6 +47,7 @@ const routeModules = [
   { path: '/api/home', file: './routes/home' },
   { path: '/api', file: './routes/competition' },
   { path: '/api', file: './routes/skill' },
+  { path: '/api', file: './routes/learning' },
   { path: '/api', file: './routes/paper' },
   { path: '/api/user', file: './routes/user' },
   { path: '/api/teacher', file: './routes/teacher' },

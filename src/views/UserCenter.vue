@@ -1,9 +1,11 @@
 <template>
-  <section class="page">
-    <header class="page__header">
-      <p class="section-label">User Center</p>
-      <h1 class="page__title">个人中心</h1>
-      <p class="page__desc">资料、身份、邮箱，保持简洁。</p>
+  <section class="product-page user-page">
+    <header class="product-header page__header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">账户与成果</p>
+        <h1 class="page__title">个人中心</h1>
+        <p class="page__desc">管理资料、学习成果与账户安全。课程掌握记录会自动保留。</p>
+      </div>
     </header>
 
     <div class="user-layout">
@@ -151,23 +153,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 40px;
-  min-height: 100vh;
-  background: var(--bg-secondary);
-}
-
 .page__header {
   margin-bottom: 40px;
 }
 
 .page__title {
   font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
+  font-size: 29px;
+  font-weight: 760;
+  letter-spacing: 0;
   margin-bottom: 8px;
 }
 
@@ -190,7 +184,7 @@ onMounted(async () => {
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   padding: 28px;
-  background: var(--bg-secondary);
+  background: #fbfcfb;
 }
 
 .profile-side__avatar {

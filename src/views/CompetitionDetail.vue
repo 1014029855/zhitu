@@ -1,5 +1,5 @@
 <template>
-  <section class="page">
+  <section class="product-page competition-detail">
     <LoadingSpinner :show="loading" />
     <div v-if="comp && !loading" class="detail-layout">
       <main class="detail-main">
@@ -186,11 +186,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 40px;
-}
+.competition-detail { max-width: 1080px; }
 
 .detail-layout {
   display: grid;
@@ -221,7 +217,7 @@ onMounted(async () => {
   font-size: 28px;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
   margin-bottom: 16px;
 }
 
@@ -271,7 +267,7 @@ onMounted(async () => {
   display: grid;
   gap: 16px;
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   padding: 24px;
   background: var(--bg-secondary);
 }
@@ -299,8 +295,8 @@ onMounted(async () => {
 .detail-side__info dt {
   font-size: 11px;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  text-transform: none;
+  letter-spacing: 0;
   margin-bottom: 2px;
 }
 

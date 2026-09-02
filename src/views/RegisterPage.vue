@@ -4,7 +4,7 @@
       <div class="auth-card__header">
         <span class="auth-card__logo">知</span>
         <h1 class="auth-card__title">创建学习身份</h1>
-        <p class="auth-card__desc">学生刷题，教师提交 — 账号只做必要信息。</p>
+        <p class="auth-card__desc">填写必要信息后即可创建账号。</p>
       </div>
 
       <form class="auth-card__form" @submit.prevent="handleRegister">
@@ -67,7 +67,7 @@
         </div>
 
         <div class="auth-actions">
-          <router-link to="/login" class="auth-actions__back">← 返回登录</router-link>
+          <router-link to="/login" class="auth-actions__back"><ArrowLeft :size="15" />返回登录</router-link>
           <button class="auth-card__submit" type="submit" :disabled="loading">
             {{ loading ? '正在注册' : '完成注册' }}
           </button>
@@ -80,6 +80,7 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ArrowLeft } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth'
 import { useRequest } from '../composables/useRequest'
 
@@ -170,7 +171,7 @@ onMounted(refreshCaptcha)
   max-width: 400px;
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius-lg);
+  border-radius: 6px;
   padding: 40px 32px;
 }
 
@@ -187,7 +188,7 @@ onMounted(refreshCaptcha)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
+  font-family: var(--font-brand);
   font-size: 36px;
   color: var(--text-primary);
   line-height: 1;
@@ -200,7 +201,7 @@ onMounted(refreshCaptcha)
   font-weight: 500;
   color: var(--text-primary);
   margin-bottom: 6px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
 }
 
 .auth-card__desc {
@@ -285,6 +286,9 @@ onMounted(refreshCaptcha)
 }
 
 .auth-actions__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -298,18 +302,16 @@ onMounted(refreshCaptcha)
   flex: 1;
   height: 40px;
   border: 0;
-  border-radius: var(--radius-md);
-  background: var(--text-primary);
-  color: var(--bg-primary);
+  border-radius: 4px;
+  background: var(--brand-green);
+  color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
-.auth-card__submit:hover {
-  background: #2a2a2a;
-}
+.auth-card__submit:hover { background: var(--brand-green-dark); }
 
 .auth-card__submit:disabled {
   opacity: 0.5;

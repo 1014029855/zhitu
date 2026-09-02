@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="product-page paper-detail">
     <LoadingSpinner :show="loading" />
 
     <div v-if="paper && !loading" class="detail">
@@ -218,8 +218,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: var(--bg-primary); }
-.detail { max-width: 960px; margin: 0 auto; padding: 48px 40px; }
+.paper-detail { max-width: 1080px; }
+.detail { max-width: 960px; margin: 0 auto; }
 
 /* back */
 .back-link {
@@ -234,7 +234,7 @@ onMounted(async () => {
 .detail__badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .detail__title {
   font-family: var(--font-heading);
-  font-size: 28px; font-weight: 700; letter-spacing: -0.4px;
+  font-size: 28px; font-weight: 700; letter-spacing: 0;
   color: var(--text-primary); line-height: 1.25; margin-bottom: 8px;
 }
 .detail__authors { font-size: 14px; color: var(--text-secondary); }
@@ -262,7 +262,7 @@ onMounted(async () => {
 
 /* meta dl */
 .detail__meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 0; }
-.detail__meta dt { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.detail__meta dt { font-size: 11px; color: var(--text-muted); text-transform: none; letter-spacing: 0; margin-bottom: 4px; }
 .detail__meta dd { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 
 /* sidebar */
@@ -284,6 +284,6 @@ onMounted(async () => {
   .detail__layout { grid-template-columns: 1fr; }
   .detail__side { position: static; }
   .detail__meta { grid-template-columns: 1fr; }
-  .detail { padding: 32px 20px; }
+  .detail { padding: 0; }
 }
 </style>

@@ -2,6 +2,7 @@
   <div class="auth-screen">
     <div class="auth-card">
       <header class="auth-card__header">
+        <span>知途</span>
         <h1>重置密码</h1>
         <p>{{ resetToken ? '设置一个新密码。' : '先验证账号。' }}</p>
       </header>
@@ -95,8 +96,9 @@ onMounted(refreshCaptcha)
 
 <style scoped>
 .auth-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--bg-secondary); }
-.auth-card { width: min(420px, 100%); padding: 36px; border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: var(--bg-primary); }
+.auth-card { width: min(420px, 100%); padding: 36px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); }
 .auth-card__header { margin-bottom: 24px; }
+.auth-card__header > span { display: block; margin-bottom: 18px; color: var(--brand-green); font: 20px var(--font-brand); }
 .auth-card__header h1 { font-family: var(--font-heading); font-size: 22px; margin-bottom: 6px; }
 .auth-card__header p, .back-link { font-size: 13px; color: var(--text-secondary); }
 .auth-form { display: grid; gap: 16px; }

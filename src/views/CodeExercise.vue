@@ -1,36 +1,37 @@
 <template>
-  <div class="page">
-    <section class="ex-hero">
-      <div class="blur-orb blur-orb--green" style="width:220px;height:220px;top:-60px;left:10%;opacity:0.3;"></div>
-      <p class="section-label" style="color:rgba(255,255,255,0.55);">Code Practice</p>
-      <h1 class="page-heading" style="font-size:32px;color:#fff;">在线刷题</h1>
-      <p class="page-subtitle" style="color:rgba(255,255,255,0.6);margin-top:6px;">115 道题目，按难度和语言筛选，直接进入代码训练。</p>
-    </section>
+  <div class="product-page exercise-page">
+    <header class="product-header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">刻意练习</p>
+        <h1>在线刷题</h1>
+        <p>按知识类型和难度训练。代码在本地轻量沙箱中运行，提交记录会进入你的掌握证据。</p>
+        <div class="product-header__meta"><span>{{ exercises.length }} 道题目</span><span>本地判题</span><span>即时反馈</span></div>
+      </div>
+      <router-link to="/leaderboard" class="btn btn--outline"><BarChart3 :size="16" />训练排行</router-link>
+    </header>
 
-    <section class="section" style="padding-top:0;">
-      <div class="toolbar">
-        <input v-model.trim="keyword" class="field__input" type="text" placeholder="搜索题目名称…" />
+    <section>
+      <div class="product-toolbar">
+        <input v-model.trim="keyword" class="field__input product-toolbar__search" type="search" placeholder="搜索题目名称或知识类型" />
         <select v-model="difficulty" class="field__input">
           <option value="all">全部难度</option>
           <option value="easy">简单</option>
           <option value="medium">中等</option>
           <option value="hard">困难</option>
         </select>
+        <span class="product-toolbar__count">{{ filteredList.length }} 道可练习</span>
       </div>
 
-      <!-- Grid -->
-      <div class="ex-grid">
+      <div class="product-list exercise-list">
         <router-link v-for="(ex, i) in pagedList" :key="ex.id"
-          class="card ex-card"
-          :class="`animate-fade-up animate-fade-up--${Math.min(i + 1, 4)}`"
+          class="product-row exercise-row"
           :to="`/exercises/${ex.id}`"
         >
-          <div class="ex-card__header">
-            <span class="pill pill--active">{{ diffLabel(ex.difficulty) }}</span>
-            <span class="ex-card__cat">{{ ex.category }}</span>
-          </div>
-          <h2 class="ex-card__title">{{ ex.title }}</h2>
-          <div class="ex-card__arrow">→</div>
+          <span class="product-row__index">{{ String((page - 1) * pageSize + i + 1).padStart(3, '0') }}</span>
+          <span class="status-tag" :class="difficultyClass(ex.difficulty)">{{ diffLabel(ex.difficulty) }}</span>
+          <span class="product-row__main"><strong>{{ ex.title }}</strong><p>用代码验证思路，运行后查看逐测试点结果。</p></span>
+          <span class="product-row__meta">{{ ex.category }}</span>
+          <span class="product-row__action"><ArrowRight :size="17" /></span>
         </router-link>
       </div>
 
@@ -48,6 +49,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { ArrowRight, BarChart3 } from 'lucide-vue-next'
 import { useRequest } from '../composables/useRequest'
 import Pagination from '../components/Pagination.vue'
 
@@ -74,6 +76,7 @@ const pagedList = computed(() => {
 })
 
 function diffLabel(v) { return { easy: '简单', medium: '中等', hard: '困难' }[v] || v }
+function difficultyClass(v) { return { easy: 'status-tag--green', medium: 'status-tag--blue', hard: 'status-tag--coral' }[v] || '' }
 
 function goPage(p) { page.value = p }
 
@@ -88,21 +91,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: var(--bg-primary); }
-.ex-hero {
-  position: relative; overflow: hidden;
-  padding: 48px 40px 40px;
-  background: linear-gradient(180deg, #1a1a1a 0%, #273020 50%, #1a1a1a 100%);
-  color: #fff;
+.product-toolbar select { flex: 0 0 140px; width: 140px; }
+.exercise-row { grid-template-columns: 44px 62px minmax(0, 1fr) 120px 20px; }
+@media (max-width: 720px) {
+  .product-toolbar select { width: 100%; flex-basis: auto; }
+  .exercise-row { grid-template-columns: 38px 58px minmax(0, 1fr) 18px; }
+  .exercise-row > :nth-child(4) { display: none; }
 }
-.section { max-width: 1080px; margin: 0 auto; padding: 0 40px 56px; }
-.toolbar { display: grid; grid-template-columns: 1fr 140px; gap: 12px; margin-bottom: 28px; margin-top: -20px; position: relative; z-index: 2; }
-.ex-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-.ex-card { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; gap: 16px; }
-.ex-card__header { display: flex; align-items: center; gap: 10px; }
-.ex-card__cat { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-.ex-card__title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: var(--text-primary); flex: 1; }
-.ex-card__arrow { font-size: 20px; color: var(--brand-green); transition: transform 0.3s ease; }
-.ex-card:hover .ex-card__arrow { transform: translateX(6px); }
-@media (max-width: 780px) { .ex-grid { grid-template-columns: 1fr; } .section { padding: 0 20px 40px; } .toolbar { grid-template-columns: 1fr; } .ex-hero { padding: 40px 20px 36px; } }
 </style>

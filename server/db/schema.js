@@ -51,7 +51,10 @@ module.exports = function createTables(db) {
       learning_objectives TEXT,
       resources TEXT,
       chapters TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      course_status VARCHAR(20) DEFAULT 'published',
+      instructor_name VARCHAR(100) DEFAULT '知途教研组',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `)
 
@@ -310,6 +313,206 @@ module.exports = function createTables(db) {
   `)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS course_modules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      skill_id INTEGER NOT NULL,
+      title VARCHAR(200) NOT NULL,
+      description TEXT DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_published INTEGER NOT NULL DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(skill_id, sort_order),
+      FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS course_lessons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      module_id INTEGER NOT NULL,
+      legacy_chapter_order INTEGER,
+      title VARCHAR(200) NOT NULL,
+      summary TEXT DEFAULT '',
+      lesson_type VARCHAR(30) NOT NULL DEFAULT 'reading'
+        CHECK(lesson_type IN ('interactive','reading','quiz','reflection')),
+      estimated_minutes INTEGER NOT NULL DEFAULT 12,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      status VARCHAR(20) NOT NULL DEFAULT 'published'
+        CHECK(status IN ('draft','published','archived')),
+      prerequisite_lesson_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(module_id, sort_order),
+      FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE,
+      FOREIGN KEY (prerequisite_lesson_id) REFERENCES course_lessons(id) ON DELETE SET NULL
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS knowledge_points (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      skill_id INTEGER NOT NULL,
+      title VARCHAR(120) NOT NULL,
+      description TEXT DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(skill_id, title),
+      FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lesson_knowledge_points (
+      lesson_id INTEGER NOT NULL,
+      knowledge_point_id INTEGER NOT NULL,
+      weight REAL NOT NULL DEFAULT 1,
+      PRIMARY KEY (lesson_id, knowledge_point_id),
+      FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE,
+      FOREIGN KEY (knowledge_point_id) REFERENCES knowledge_points(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lesson_blocks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lesson_id INTEGER NOT NULL,
+      type VARCHAR(30) NOT NULL DEFAULT 'text'
+        CHECK(type IN ('scenario','text','explanation','key_points','reflection','divider')),
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      content_json TEXT NOT NULL DEFAULT '{}',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(lesson_id, sort_order),
+      FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS learning_activities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lesson_id INTEGER NOT NULL,
+      knowledge_point_id INTEGER,
+      type VARCHAR(30) NOT NULL
+        CHECK(type IN ('single_choice','multiple_choice','sequence','classify')),
+      prompt TEXT NOT NULL,
+      config_json TEXT NOT NULL DEFAULT '{}',
+      explanation TEXT DEFAULT '',
+      points INTEGER NOT NULL DEFAULT 10,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_required INTEGER NOT NULL DEFAULT 1,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE,
+      FOREIGN KEY (knowledge_point_id) REFERENCES knowledge_points(id) ON DELETE SET NULL
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS course_enrollments (
+      user_id INTEGER NOT NULL,
+      skill_id INTEGER NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'active'
+        CHECK(status IN ('active','completed','paused')),
+      active_lesson_id INTEGER,
+      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_activity_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME,
+      PRIMARY KEY (user_id, skill_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,
+      FOREIGN KEY (active_lesson_id) REFERENCES course_lessons(id) ON DELETE SET NULL
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lesson_progress (
+      user_id INTEGER NOT NULL,
+      lesson_id INTEGER NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'not_started'
+        CHECK(status IN ('not_started','in_progress','completed')),
+      progress INTEGER NOT NULL DEFAULT 0 CHECK(progress BETWEEN 0 AND 100),
+      best_score INTEGER NOT NULL DEFAULT 0,
+      started_at DATETIME,
+      completed_at DATETIME,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, lesson_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lesson_notes (
+      user_id INTEGER NOT NULL,
+      lesson_id INTEGER NOT NULL,
+      explanation TEXT NOT NULL DEFAULT '',
+      example TEXT NOT NULL DEFAULT '',
+      question TEXT NOT NULL DEFAULT '',
+      confidence INTEGER NOT NULL DEFAULT 1 CHECK(confidence BETWEEN 1 AND 4),
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, lesson_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS activity_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      activity_id INTEGER NOT NULL,
+      attempt_number INTEGER NOT NULL DEFAULT 1,
+      answer_json TEXT NOT NULL DEFAULT '{}',
+      is_correct INTEGER NOT NULL DEFAULT 0,
+      score INTEGER NOT NULL DEFAULT 0,
+      feedback_json TEXT NOT NULL DEFAULT '{}',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (activity_id) REFERENCES learning_activities(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS learner_mastery (
+      user_id INTEGER NOT NULL,
+      skill_id INTEGER NOT NULL,
+      knowledge_point_id INTEGER NOT NULL,
+      level VARCHAR(20) NOT NULL DEFAULT 'initial'
+        CHECK(level IN ('initial','familiar','proficient','mastered')),
+      score INTEGER NOT NULL DEFAULT 0 CHECK(score BETWEEN 0 AND 100),
+      evidence_count INTEGER NOT NULL DEFAULT 0,
+      correct_streak INTEGER NOT NULL DEFAULT 0,
+      last_practiced_at DATETIME,
+      next_review_at DATETIME,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, knowledge_point_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,
+      FOREIGN KEY (knowledge_point_id) REFERENCES knowledge_points(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS course_content_versions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      skill_id INTEGER NOT NULL,
+      lesson_id INTEGER,
+      version_number INTEGER NOT NULL,
+      event_type VARCHAR(20) NOT NULL DEFAULT 'save'
+        CHECK(event_type IN ('save','publish')),
+      snapshot_json TEXT NOT NULL,
+      note TEXT DEFAULT '',
+      created_by INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,
+      FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE SET NULL,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `)
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_goals_user_status ON user_goals(user_id, status);
     CREATE INDEX IF NOT EXISTS idx_goal_tasks_goal_status ON goal_tasks(goal_id, status);
     CREATE INDEX IF NOT EXISTS idx_goal_tasks_content ON goal_tasks(content_type, content_id, content_key);
@@ -317,6 +520,15 @@ module.exports = function createTables(db) {
     CREATE INDEX IF NOT EXISTS idx_participations_user ON competition_participations(user_id, status);
     CREATE INDEX IF NOT EXISTS idx_paper_library_user ON paper_library(user_id, status);
     CREATE INDEX IF NOT EXISTS idx_achievements_user ON achievements(user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_course_modules_skill ON course_modules(skill_id, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_course_lessons_module ON course_lessons(module_id, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_lesson_blocks_lesson ON lesson_blocks(lesson_id, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_learning_activities_lesson ON learning_activities(lesson_id, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_attempts_user_activity ON activity_attempts(user_id, activity_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_mastery_user_review ON learner_mastery(user_id, next_review_at);
+    CREATE INDEX IF NOT EXISTS idx_lesson_progress_user ON lesson_progress(user_id, status);
+    CREATE INDEX IF NOT EXISTS idx_lesson_notes_user ON lesson_notes(user_id, updated_at);
+    CREATE INDEX IF NOT EXISTS idx_course_versions_skill ON course_content_versions(skill_id, version_number);
   `)
 
   // Migration: add paper_source column to existing papers table
@@ -346,5 +558,10 @@ module.exports = function createTables(db) {
     completed INTEGER DEFAULT 0, notes TEXT DEFAULT '', updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, skill_id, chapter_order)
   )`) } catch {}
+
+  try { db.exec(`ALTER TABLE skills ADD COLUMN course_status VARCHAR(20) DEFAULT 'published'`) } catch {}
+  try { db.exec(`ALTER TABLE skills ADD COLUMN instructor_name VARCHAR(100) DEFAULT '知途教研组'`) } catch {}
+  try { db.exec(`ALTER TABLE skills ADD COLUMN updated_at DATETIME`) } catch {}
+  try { db.exec(`UPDATE skills SET updated_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)`) } catch {}
 
 }

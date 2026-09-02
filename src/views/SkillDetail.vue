@@ -1,225 +1,277 @@
 <template>
-  <div class="learn" v-if="skill">
-    <!-- Header -->
-    <header class="learn__hero gradient-hero">
-      <router-link to="/skills" class="back-link">
-        <ArrowLeft :size="16" :stroke-width="1.5" /> 返回课程列表
-      </router-link>
-      <div class="learn__hero-body">
-        <div class="learn__hero-left">
-          <p class="section-label">{{ skill.category }}</p>
-          <h1 class="learn__title">{{ skill.title }}</h1>
-          <p class="learn__subtitle">{{ skill.cover_description || skill.description }}</p>
-          <div class="learn__meta">
-            <span class="pill">{{ skill.difficulty }}</span>
-            <span class="pill pill--active">{{ totalChapters }} 章</span>
-            <span class="pill">{{ skill.hours || skill.estimated_hours }}h</span>
+  <div v-if="data" class="course-page">
+    <LearningTopNav />
+    <header class="course-header">
+      <div class="course-header__main">
+        <div>
+          <h1>{{ data.course.title }}</h1>
+          <p class="course-header__instructor">授课教师 <strong>{{ data.course.instructor_name }}</strong></p>
+          <p>{{ data.course.description }}</p>
+          <div class="course-header__facts">
+            <span><CheckCircle2 :size="14" />已加入学习</span>
+            <span>{{ data.summary.moduleCount }} 个单元 · {{ data.summary.lessonCount }} 个课时</span>
+            <span>约 {{ data.course.estimated_hours }} 小时</span>
           </div>
         </div>
-        <div class="learn__hero-right">
-          <div class="progress-ring">
-            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--border-primary)" stroke-width="8"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--brand-green)" stroke-width="8" stroke-linecap="round" :stroke-dasharray="2 * Math.PI * 42" :stroke-dashoffset="2 * Math.PI * 42 - (2 * Math.PI * 42 * progress)" transform="rotate(-90 50 50)" style="transition: stroke-dashoffset 0.8s ease"/></svg>
-            <span class="progress-ring__text">{{ Math.round(progress * 100) }}%</span>
+        <div class="course-header__action">
+          <div class="course-progress">
+            <svg viewBox="0 0 84 84" aria-hidden="true">
+              <circle cx="42" cy="42" r="35"></circle>
+              <circle class="course-progress__value" cx="42" cy="42" r="35" :style="{ '--progress-offset': 220 - (220 * data.summary.masteryScore / 100) }"></circle>
+            </svg>
+            <div><strong>{{ data.summary.masteryScore }}%</strong><span>整体掌握</span></div>
           </div>
+          <button type="button" @click="continueLearning">
+            {{ data.summary.completedLessons ? '继续学习' : '开始课程' }}<ArrowRight :size="18" />
+          </button>
+          <router-link v-if="isAdmin" :to="`/admin/courses/${courseId}`" class="course-header__studio">
+            <Settings2 :size="15" />编辑课程
+          </router-link>
         </div>
       </div>
     </header>
 
-    <!-- Chapter layout -->
-    <div class="learn__layout">
-      <!-- Chapter list -->
-      <aside class="learn__toc">
-        <h3 class="learn__toc-title">章节目录</h3>
-        <div
-          v-for="(ch, i) in chapters"
-          :key="i"
-          class="learn__toc-item"
-          :class="{ 'learn__toc-item--active': i === activeChapter, 'learn__toc-item--done': progressMap[i] }"
-          @click="openChapter(i)"
-        >
-          <span class="learn__toc-check">{{ progressMap[i] ? '✓' : (i + 1) }}</span>
-          <span class="learn__toc-label">{{ ch.title }}</span>
-        </div>
-      </aside>
-
-      <!-- Content area -->
-      <main class="learn__content" v-if="activeChapter !== null">
-        <h2 class="learn__chapter-title">{{ chapters[activeChapter]?.title }}</h2>
-        <div class="learn__chapter-body" v-html="renderedContent"></div>
-
-        <!-- Key points -->
-        <div v-if="chapters[activeChapter]?.key_points?.length" class="learn__keypoints">
-          <h4>本章要点</h4>
-          <ul>
-            <li v-for="(kp, i) in chapters[activeChapter].key_points" :key="i">{{ kp }}</li>
-          </ul>
+    <div class="course-layout">
+      <main class="course-path">
+        <div class="course-path__heading">
+          <div><h2>学习路径</h2><p>{{ data.summary.completedLessons }}/{{ data.summary.lessonCount }} 课时完成</p></div>
+          <button type="button" @click="toggleAllModules">{{ allModulesExpanded ? '收起' : '展开' }}<ChevronDown :size="15" :class="{ expanded: allModulesExpanded }" /></button>
         </div>
 
-        <!-- Nav -->
-        <div class="learn__nav">
-          <button class="btn btn--ghost" @click="openChapter(activeChapter - 1)" :disabled="activeChapter <= 0">
-            ← 上一章
-          </button>
-          <div class="learn__nav-right">
-            <button class="btn btn--primary" @click="askAiAboutChapter">
-              <MessageCircle :size="16" :stroke-width="1.5" /> 问 AI
+        <section v-for="(module, moduleIndex) in data.modules" :key="module.id" class="course-unit" :class="{ 'course-unit--expanded': isModuleExpanded(module.id) }" :style="{ '--unit-index': moduleIndex }">
+          <header class="course-unit__header">
+            <div class="course-unit__number">{{ String(moduleIndex + 1).padStart(2, '0') }}</div>
+            <div><h3>{{ module.title }}</h3><p>{{ module.description }}</p></div>
+            <button type="button" class="course-unit__toggle" :title="isModuleExpanded(module.id) ? '收起单元' : '展开单元'" @click="toggleModule(module.id)">
+              {{ module.lessons.filter(lesson => lesson.status === 'completed').length }}/{{ module.lessons.length }}
+              <ChevronDown :size="15" :class="{ expanded: isModuleExpanded(module.id) }" />
             </button>
-            <button v-if="!progressMap[activeChapter]" class="btn btn--primary" @click="markDone(activeChapter)">
-              标记已完成
+          </header>
+          <div v-show="isModuleExpanded(module.id)" class="course-unit__lessons">
+            <button
+              v-for="(lesson, lessonIndex) in module.lessons"
+              :key="lesson.id"
+              type="button"
+              class="course-lesson"
+              :class="{ current: lesson.id === data.summary.continueLessonId, done: lesson.status === 'completed' }"
+              @click="openLesson(lesson.id)"
+            >
+              <span class="course-lesson__state">
+                <Check v-if="lesson.status === 'completed'" :size="15" />
+                <Play v-else-if="lesson.id === data.summary.continueLessonId" :size="14" fill="currentColor" />
+                <span v-else>{{ moduleIndex + 1 }}.{{ lessonIndex + 1 }}</span>
+              </span>
+              <span class="course-lesson__body"><strong>{{ lesson.title }}</strong><small>{{ lesson.summary }}</small></span>
+              <span class="course-lesson__type">
+                <MousePointer2 v-if="lesson.type === 'interactive'" :size="14" />
+                <BookOpen v-else-if="lesson.type === 'reading'" :size="14" />
+                <ClipboardCheck v-else :size="14" />
+                {{ lessonTypeLabel(lesson.type) }}
+              </span>
+              <span class="course-lesson__time">{{ lesson.estimatedMinutes }} 分</span>
+              <ArrowRight :size="16" class="course-lesson__arrow" />
             </button>
-            <span v-else class="learn__done-badge">✓ 已完成</span>
           </div>
-          <button class="btn btn--ghost" @click="openChapter(activeChapter + 1)" :disabled="activeChapter >= totalChapters - 1">
-            下一章 →
-          </button>
-        </div>
-
-        <!-- Notes -->
-        <div class="learn__notes">
-          <h4>📝 你的笔记</h4>
-          <textarea v-model="notes[activeChapter]" class="field__input" style="min-height:100px;resize:vertical;" placeholder="写下你对本章的想法..."></textarea>
-          <button class="btn btn--primary" @click="saveNotes(activeChapter)" style="margin-top:8px;">保存笔记</button>
-        </div>
+        </section>
       </main>
+
+      <aside class="course-aside">
+        <section class="today-review">
+          <header><span>今日复习</span><RotateCcw :size="17" /></header>
+          <strong>{{ data.summary.dueReviewCount }}</strong>
+          <p>{{ data.summary.dueReviewCount ? '知识点已到复习时间' : '今天没有到期的复习' }}</p>
+          <router-link v-if="data.summary.dueReviewCount" to="/skills">开始复习<ArrowRight :size="14" /></router-link>
+        </section>
+
+        <section class="mastery-panel">
+          <header><h2>知识掌握分布</h2><span>{{ data.mastery.length }} 个知识点</span></header>
+          <div v-for="level in masteryLevels" :key="level.key" class="mastery-row">
+            <span>{{ level.label }}</span>
+            <i><b :style="{ width: masteryWidth(level.key) }" :class="`bar-${level.key}`"></b></i>
+            <strong>{{ data.summary.masteryDistribution[level.key] || 0 }}</strong>
+          </div>
+        </section>
+
+        <section class="evidence-panel">
+          <header><h2>最近的掌握证据</h2></header>
+          <div v-for="point in recentEvidence" :key="point.id" class="evidence-row">
+            <span :class="`evidence-row__dot level-${point.level}`"></span>
+            <div><strong>{{ point.title }}</strong><small>{{ point.evidence_count }} 条证据 · {{ masteryLabel(point.level) }}</small></div>
+            <b>{{ point.score }}</b>
+          </div>
+          <p v-if="recentEvidence.length === 0" class="evidence-panel__empty">完成互动题后，这里会显示你的掌握变化。</p>
+        </section>
+      </aside>
     </div>
-
-    <AiDrawer :visible="aiVisible" :context="aiContext" @close="aiVisible = false" />
   </div>
-
   <LoadingSpinner v-else :show="true" />
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { ArrowLeft, MessageCircle } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronDown, ClipboardCheck, MousePointer2, Play, RotateCcw, Settings2 } from 'lucide-vue-next'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import LearningTopNav from '../components/course/LearningTopNav.vue'
 import { useRequest } from '../composables/useRequest'
 import { useStorage } from '../composables/useStorage'
-import AiDrawer from '../components/AiDrawer.vue'
-import LoadingSpinner from '../components/LoadingSpinner.vue'
 
 const route = useRoute()
+const router = useRouter()
 const { get, post } = useRequest()
-const { get: lsGet } = useStorage()
-const skill = ref(null)
-const chapters = ref([])
-const activeChapter = ref(0)
-const progressMap = ref({})
-const notes = ref({})
-const aiVisible = ref(false)
-const aiContext = ref({})
-const loading = ref(true)
+const { get: storageGet } = useStorage()
+const data = ref(null)
+const expandedModules = ref(new Set())
+const courseId = computed(() => Number(route.params.id))
+const isAdmin = computed(() => storageGet('userInfo')?.accountType === 'admin')
+const masteryLevels = [
+  { key: 'initial', label: '初识' },
+  { key: 'familiar', label: '熟悉' },
+  { key: 'proficient', label: '熟练' },
+  { key: 'mastered', label: '掌握' }
+]
+const recentEvidence = computed(() => data.value?.mastery.filter(point => point.evidence_count > 0).sort((a, b) => b.evidence_count - a.evidence_count).slice(0, 5) || [])
+const allModulesExpanded = computed(() => data.value?.modules.length > 0 && data.value.modules.every(module => expandedModules.value.has(module.id)))
 
-const totalChapters = computed(() => chapters.value.length)
-const progress = computed(() => {
-  if (!totalChapters.value) return 0
-  const done = Object.values(progressMap.value).filter(Boolean).length
-  return done / totalChapters.value
-})
-
-const renderedContent = computed(() => {
-  const raw = chapters.value[activeChapter.value]?.content || ''
-  return raw.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>').replace(/^/, '<p>').replace(/$/, '</p>')
-})
-
-function openChapter(i) {
-  if (i < 0 || i >= totalChapters.value) return
-  activeChapter.value = i
+function lessonTypeLabel(type) {
+  return { interactive: '互动', reading: '阅读', quiz: '小测', reflection: '反思' }[type] || '课时'
 }
-
-async function markDone(i) {
-  progressMap.value = { ...progressMap.value, [i]: true }
-  try {
-    await post('/skill/progress', { skillId: skill.value.id, chapterOrder: i, completed: 1 })
-  } catch {}
+function masteryLabel(level) {
+  return masteryLevels.find(item => item.key === level)?.label || '初识'
 }
-
-async function saveNotes(i) {
-  try {
-    await post('/skill/progress', { skillId: skill.value.id, chapterOrder: i, notes: notes.value[i] || '', completed: progressMap.value[i] ? 1 : 0 })
-  } catch {}
+function masteryWidth(level) {
+  const total = Math.max(1, data.value.mastery.length)
+  return `${(data.value.summary.masteryDistribution[level] || 0) / total * 100}%`
 }
-
-async function loadProgress() {
-  const userId = lsGet('userInfo')?.id
-  if (!skill.value?.id || !userId) return
-  try {
-    const data = await get(`/skill/progress/${skill.value.id}`)
-    const pm = {}; const nt = {}
-    for (const p of (data?.progress || [])) {
-      pm[p.chapter_order] = !!p.completed
-      nt[p.chapter_order] = p.notes || ''
-    }
-    progressMap.value = pm; notes.value = nt
-  } catch {}
+function openLesson(id) { router.push(`/skills/${courseId.value}/lessons/${id}`) }
+function isModuleExpanded(id) { return expandedModules.value.has(id) }
+function toggleModule(id) {
+  const next = new Set(expandedModules.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  expandedModules.value = next
 }
-
-function askAiAboutChapter() {
-  const ch = chapters.value[activeChapter.value]
-  aiContext.value = {
-    type: 'course', id: skill.value.id,
-    question: `请帮我深入理解这一章的内容：${ch?.title}`,
-    content: `课程: ${skill.value.title}\n章节: ${ch?.title}\n内容: ${ch?.content?.slice(0, 2000)}`
-  }
-  aiVisible.value = true
+function toggleAllModules() {
+  expandedModules.value = allModulesExpanded.value ? new Set() : new Set(data.value.modules.map(module => module.id))
+}
+function continueLearning() {
+  if (data.value.summary.continueLessonId) openLesson(data.value.summary.continueLessonId)
 }
 
 onMounted(async () => {
-  try {
-    skill.value = await get(`/skills/${route.params.id}`)
-    chapters.value = Array.isArray(skill.value.chapters) ? skill.value.chapters : JSON.parse(skill.value.chapters || '[]')
-    await loadProgress()
-  } catch {} finally { loading.value = false }
+  try { await post(`/skills/${courseId.value}/enroll`, {}) } catch {}
+  data.value = await get(`/skills/${courseId.value}/learning`)
+  const activeModule = data.value.modules.find(module => module.lessons.some(lesson => lesson.id === data.value.summary.continueLessonId))
+  expandedModules.value = new Set([activeModule?.id || data.value.modules[0]?.id].filter(Boolean))
 })
 </script>
 
 <style scoped>
-.learn { min-height: 100vh; background: var(--bg-primary); }
-.learn__hero { padding: 48px 40px 40px; position: relative; overflow: hidden; }
-.learn__hero-body { display: flex; gap: 40px; align-items: flex-start; max-width: 1080px; margin: 24px auto 0; }
-.learn__hero-left { flex: 1; }
-.learn__title { font-family: var(--font-heading); font-size: 32px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.4px; margin: 8px 0; }
-.learn__subtitle { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; }
-.learn__meta { display: flex; gap: 8px; }
-.back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
-.back-link:hover { color: var(--text-primary); }
-
-.learn__hero-right { flex-shrink: 0; }
-.progress-ring { width: 100px; height: 100px; position: relative; }
-.progress-ring__text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--brand-green-dark); }
-
-.learn__layout { display: grid; grid-template-columns: 260px 1fr; max-width: 1080px; margin: 0 auto; padding: 0 40px 56px; gap: 36px; }
-.learn__toc { position: sticky; top: 24px; align-self: start; background: var(--bg-white); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); padding: 0; overflow: hidden; }
-.learn__toc-title { font-family: var(--font-heading); font-size: 14px; font-weight: 600; padding: 16px 18px; border-bottom: 1px solid var(--border-primary); }
-.learn__toc-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; cursor: pointer; font-size: 13px; transition: background 0.12s; }
-.learn__toc-item:hover { background: var(--bg-secondary); }
-.learn__toc-item--active { background: var(--brand-green-light); font-weight: 600; }
-.learn__toc-item--done { color: var(--text-secondary); }
-.learn__toc-check { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; border: 1px solid var(--border-primary); }
-.learn__toc-item--done .learn__toc-check { background: var(--brand-green); color: #fff; border-color: var(--brand-green); }
-.learn__toc-item--active .learn__toc-check { border-color: var(--brand-green); color: var(--brand-green-dark); }
-
-.learn__content { min-width: 0; }
-.learn__chapter-title { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; }
-.learn__chapter-body { font-size: 15px; line-height: 1.9; color: var(--text-primary); }
-.learn__chapter-body :deep(p) { margin-bottom: 16px; }
-.learn__chapter-body :deep(h2), .learn__chapter-body :deep(h3) { font-family: var(--font-heading); margin: 24px 0 12px; }
-
-.learn__keypoints { margin: 28px 0; padding: 20px; background: var(--brand-green-light); border-radius: var(--radius-lg); }
-.learn__keypoints h4 { font-size: 14px; font-weight: 700; color: var(--brand-green-dark); margin-bottom: 10px; }
-.learn__keypoints ul { padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--text-primary); }
-
-.learn__nav { display: flex; align-items: center; justify-content: space-between; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-primary); }
-.learn__nav-right { display: flex; align-items: center; gap: 8px; }
-.learn__done-badge { font-size: 13px; font-weight: 600; color: var(--brand-green-dark); background: var(--brand-green-light); padding: 6px 14px; border-radius: var(--radius-pill); }
-
-.learn__notes { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-primary); }
-.learn__notes h4 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
-
-@media (max-width: 800px) {
-  .learn__layout { grid-template-columns: 1fr; padding: 0 20px 40px; }
-  .learn__toc { position: static; }
-  .learn__hero { padding: 32px 20px; }
-  .learn__hero-body { flex-direction: column; }
+.course-page { min-height: 100vh; background: #fff; color: #1d211e; }
+.course-header { padding: 24px 36px 27px; border-bottom: 1px solid #dfe3df; background: #fff; }
+.course-header__main { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 54px; max-width: 1160px; margin: 0 auto; }
+.course-header h1 { font-size: 32px; line-height: 1.18; font-weight: 760; letter-spacing: 0; }
+.course-header__main > div > p:not(.course-header__instructor) { max-width: 720px; margin-top: 12px; color: #3f4741; font-size: 13px; line-height: 1.7; }
+.course-header__instructor { margin-top: 13px; color: #505851; font-size: 12px; }
+.course-header__instructor strong { margin-left: 8px; color: #1769d1; }
+.course-header__facts { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 17px; color: #656d66; font-size: 10px; }
+.course-header__facts span { display: inline-flex; align-items: center; gap: 6px; }
+.course-header__action { display: grid; grid-template-columns: 86px 1fr; align-content: center; gap: 10px 14px; }
+.course-progress { position: relative; display: grid; place-items: center; width: 86px; height: 86px; }
+.course-progress svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.course-progress circle { fill: none; stroke: #e5e8e4; stroke-width: 8; }
+.course-progress .course-progress__value { stroke: #159447; stroke-linecap: round; stroke-dasharray: 220; stroke-dashoffset: var(--progress-offset); transition: stroke-dashoffset 600ms cubic-bezier(.16,1,.3,1); }
+.course-progress div { z-index: 1; display: grid; text-align: center; }
+.course-progress strong { font-size: 17px; }
+.course-progress span { color: #7a817b; font-size: 9px; }
+.course-header__action > button { align-self: end; display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 16px; border: 0; background: #159447; color: #fff; font-weight: 750; cursor: pointer; }
+.course-header__action > button:hover { background: #0f7b39; }
+.course-header__studio { grid-column: 2; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 30px; border: 1px solid #d5d9d5; color: #4d544e; font-size: 11px; }
+.course-layout { display: grid; grid-template-columns: minmax(0, 780px) 280px; gap: 38px; max-width: 1160px; margin: 0 auto; padding: 24px 28px 80px; }
+.course-path__heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+.course-path__heading > div { display: flex; align-items: baseline; gap: 12px; }
+.course-path__heading h2 { font-size: 17px; }
+.course-path__heading p { color: #747b75; font-size: 9px; }
+.course-path__heading > button { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; color: #747b75; font-size: 10px; cursor: pointer; }
+.course-path__heading > button svg { transition: transform 180ms; }
+.course-path__heading > button svg.expanded { transform: rotate(180deg); }
+.course-unit { position: relative; margin-bottom: 12px; border: 1px solid #dce0dc; border-radius: 6px; background: #fff; overflow: hidden; animation: course-unit-in 440ms cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--unit-index) * 45ms); }
+.course-unit--expanded::after { position: absolute; z-index: 1; left: 26px; top: 43px; bottom: 14px; width: 1px; background: #159447; content: ''; }
+.course-unit__header { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 3px 20px; min-height: 58px; padding: 11px 14px 10px 50px; background: #fbfcfb; }
+.course-unit__number { position: absolute; z-index: 2; left: 12px; top: 13px; display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: #159447; color: #fff; font-size: 10px; }
+.course-unit__header h3 { font-size: 13px; }
+.course-unit__header p { margin-top: 3px; color: #777e78; font-size: 9px; }
+.course-unit__toggle { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; color: #777e78; font-size: 9px; cursor: pointer; }
+.course-unit__toggle svg { transition: transform 180ms; }
+.course-unit__toggle svg.expanded { transform: rotate(180deg); }
+.course-unit__lessons { border-top: 1px solid #e3e6e3; padding-left: 35px; }
+.course-lesson { display: grid; grid-template-columns: 30px minmax(0, 1fr) 68px 43px 18px; align-items: center; gap: 10px; width: 100%; min-height: 58px; padding: 8px 13px 8px 0; border: 0; border-bottom: 1px solid #e7e9e7; background: #fff; color: #2d332e; text-align: left; cursor: pointer; transition: background 140ms, transform 140ms; }
+.course-lesson:last-child { border-bottom: 0; }
+.course-lesson:hover { z-index: 1; background: #f7f9f7; transform: translateX(2px); }
+.course-lesson.current { background: #edf7f0; }
+.course-lesson__state { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid #cfd4cf; color: #7e857f; font-family: var(--font-mono); font-size: 9px; }
+.course-lesson.current .course-lesson__state, .course-lesson.done .course-lesson__state { border-color: #159447; background: #159447; color: #fff; }
+.course-lesson__body { display: grid; gap: 4px; min-width: 0; }
+.course-lesson__body strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.course-lesson__body small { overflow: hidden; color: #858b86; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.course-lesson__type { display: inline-flex; align-items: center; gap: 5px; color: #656c66; font-size: 10px; }
+.course-lesson__time { color: #939994; font-family: var(--font-mono); font-size: 9px; }
+.course-lesson__arrow { color: #a1a6a1; }
+.course-aside { align-self: start; display: grid; gap: 11px; }
+.course-aside section { padding: 17px; border: 1px solid #dce0dc; border-radius: 6px; background: #fff; }
+.today-review header, .mastery-panel header, .evidence-panel header { display: flex; align-items: center; justify-content: space-between; }
+.today-review header span, .mastery-panel h2, .evidence-panel h2 { font-size: 12px; font-weight: 750; }
+.today-review header svg { color: #1769d1; }
+.today-review > strong { display: block; margin-top: 15px; font-family: var(--font-mono); font-size: 38px; line-height: 1; }
+.today-review p { margin-top: 6px; color: #777e78; font-size: 11px; }
+.today-review a { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; color: #1769d1; font-size: 11px; font-weight: 700; }
+.mastery-panel header span { color: #858b86; font-family: var(--font-mono); font-size: 9px; }
+.mastery-row { display: grid; grid-template-columns: 34px 1fr 22px; align-items: center; gap: 9px; margin-top: 14px; }
+.mastery-row > span { font-size: 10px; }
+.mastery-row i { height: 5px; background: #e7e9e6; }
+.mastery-row b { display: block; height: 100%; min-width: 2px; }
+.mastery-row .bar-initial { background: #83a8d9; }
+.mastery-row .bar-familiar { background: #1769d1; }
+.mastery-row .bar-proficient { background: #ef6a4b; }
+.mastery-row .bar-mastered { background: #159447; }
+.mastery-row strong { color: #727973; font-family: var(--font-mono); font-size: 9px; text-align: right; }
+.evidence-row { display: grid; grid-template-columns: 7px 1fr auto; gap: 9px; align-items: center; margin-top: 15px; }
+.evidence-row__dot { width: 7px; height: 7px; border-radius: 50%; }
+.evidence-row__dot.level-initial { background: #83a8d9; }
+.evidence-row__dot.level-familiar { background: #1769d1; }
+.evidence-row__dot.level-proficient { background: #ef6a4b; }
+.evidence-row__dot.level-mastered { background: #159447; }
+.evidence-row div { display: grid; gap: 2px; }
+.evidence-row strong { font-size: 10px; }
+.evidence-row small { color: #858b86; font-size: 9px; }
+.evidence-row > b { font-family: var(--font-mono); font-size: 10px; }
+.evidence-panel__empty { margin-top: 14px; color: #858b86; font-size: 10px; line-height: 1.6; }
+@keyframes course-unit-in { from { opacity: 0; transform: translateY(9px); } }
+@media (prefers-reduced-motion: reduce) {
+  .course-unit { animation: none; }
+}
+@media (max-width: 980px) {
+  .course-header { padding-right: 22px; padding-left: 22px; }
+  .course-header__main { grid-template-columns: minmax(0, 1fr) 210px; gap: 24px; }
+  .course-layout { grid-template-columns: minmax(0, 1fr) 180px; gap: 16px; padding: 20px 16px 60px; }
+  .course-header__action { grid-template-columns: 76px 1fr; gap: 9px; }
+  .course-progress { width: 76px; height: 76px; }
+  .course-header__action > button { padding: 0 11px; font-size: 11px; }
+  .course-aside { gap: 9px; }
+  .course-aside section { padding: 13px; }
+}
+@media (max-width: 720px) {
+  .course-header { padding: 22px 20px 28px; }
+  .course-header__main { grid-template-columns: 1fr; gap: 24px; }
+  .course-header h1 { font-size: 32px; }
+  .course-header__action { grid-template-columns: 76px 1fr; }
+  .course-progress { width: 76px; height: 76px; }
+  .course-progress::before { width: 62px; height: 62px; }
+  .course-layout { grid-template-columns: 1fr; padding: 34px 16px 60px; }
+  .course-unit__header { padding-left: 48px; }
+  .course-unit__number { left: 11px; }
+  .course-lesson { grid-template-columns: 32px 1fr 18px; }
+  .course-lesson__type, .course-lesson__time { display: none; }
+  .course-aside { grid-template-columns: 1fr; gap: 0; }
 }
 </style>

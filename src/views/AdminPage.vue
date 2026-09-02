@@ -1,26 +1,37 @@
 <template>
-  <section class="page">
-    <header class="page__header">
-      <p class="section-label">Admin Studio</p>
-      <h1 class="page__title">管理后台</h1>
-      <p class="page__desc">审核提交内容、维护题库，让平台保持清晰可用。</p>
+  <section class="product-page admin-page">
+    <header class="product-header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">平台管理</p>
+        <h1>管理后台</h1>
+        <p>维护课程、题库和投稿审核。</p>
+      </div>
     </header>
 
-    <div class="admin-cards">
-      <router-link class="admin-cards__item admin-cards__item--hot" to="/admin/exercises">
-        <span class="admin-cards__num">01</span>
-        <h2 class="admin-cards__title">题库管理</h2>
-        <p class="admin-cards__desc">生成、查看和维护在线刷题题目。</p>
-        <ArrowRight :size="16" :stroke-width="1.5" class="admin-cards__arrow" />
+    <nav class="admin-links product-list" aria-label="管理工具">
+      <router-link class="admin-link product-row" to="/admin/courses">
+        <span class="product-row__index">01</span>
+        <div class="product-row__main"><strong>课程工作台</strong><p>编辑课程结构、互动活动和发布版本。</p></div>
+        <span class="status-tag status-tag--green">课程</span>
+        <ArrowRight :size="16" class="product-row__action" />
       </router-link>
-      <div class="admin-cards__item">
-        <span class="admin-cards__num">02</span>
-        <h2 class="admin-cards__title">待审核内容</h2>
-        <p class="admin-cards__desc">当前待处理：{{ pending.length }} 条</p>
+      <router-link class="admin-link product-row" to="/admin/exercises">
+        <span class="product-row__index">02</span>
+        <div class="product-row__main"><strong>题库管理</strong><p>生成、查看和维护在线刷题题目。</p></div>
+        <span class="status-tag status-tag--blue">练习</span>
+        <ArrowRight :size="16" class="product-row__action" />
+      </router-link>
+      <div class="admin-link product-row">
+        <span class="product-row__index">03</span>
+        <div class="product-row__main"><strong>内容审核</strong><p>处理教师提交的竞赛、课程和论文资源。</p></div>
+        <span class="status-tag status-tag--coral">{{ pending.length }} 条</span>
+        <span></span>
       </div>
-    </div>
+    </nav>
 
-    <div class="review-list">
+    <section class="review-panel">
+      <header><div><span>内容审核</span><h2>待处理投稿</h2></div><strong>{{ pending.length }}</strong></header>
+      <div class="review-list">
       <article v-for="item in pending" :key="item.id" class="review-list__item">
         <div class="review-list__body">
           <span class="review-list__type">{{ item.type }}</span>
@@ -33,7 +44,8 @@
         </div>
       </article>
       <p v-if="pending.length === 0" class="empty-state">暂无待审核内容。</p>
-    </div>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -64,94 +76,14 @@ onMounted(loadPending)
 </script>
 
 <style scoped>
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 40px;
-  min-height: 100vh;
-  background: var(--bg-secondary);
-}
-
-.page__header {
-  margin-bottom: 40px;
-}
-
-.page__title {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
-  margin-bottom: 8px;
-}
-
-.page__desc {
-  font-size: 14px;
-  color: var(--text-tertiary);
-  margin-bottom: 0;
-}
-
-.admin-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
-  margin-bottom: 40px;
-  border-top: 1px solid var(--border-primary);
-  border-left: 1px solid var(--border-primary);
-}
-
-.admin-cards__item {
-  position: relative;
-  display: grid;
-  min-height: 220px;
-  align-content: space-between;
-  gap: 12px;
-  padding: 28px;
-  border-right: 1px solid var(--border-primary);
-  border-bottom: 1px solid var(--border-primary);
-  text-decoration: none;
-  color: var(--text-primary);
-}
-
-.admin-cards__item--hot {
-  background: var(--red);
-  color: #fff;
-}
-
-.admin-cards__num {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-
-.admin-cards__item--hot .admin-cards__num {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.admin-cards__title {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 500;
-  line-height: 1.15;
-  margin: 0;
-}
-
-.admin-cards__desc {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin: 0;
-  max-width: 300px;
-}
-
-.admin-cards__item--hot .admin-cards__desc {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.admin-cards__arrow {
-  position: absolute;
-  right: 28px;
-  bottom: 28px;
-  color: rgba(255, 255, 255, 0.7);
-}
+.admin-page { max-width: 1080px; }
+.admin-links { margin-top: 28px; }
+.admin-link { grid-template-columns: 34px minmax(0, 1fr) 72px 20px; }
+.review-panel { margin-top: 42px; }
+.review-panel > header { display: flex; align-items: end; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--border-primary); }
+.review-panel > header span { color: var(--brand-green); font-size: 10px; font-weight: 700; }
+.review-panel > header h2 { margin-top: 5px; font-size: 18px; }
+.review-panel > header > strong { color: var(--text-muted); font: 12px var(--font-mono); }
 
 .review-list {
   border-top: 1px solid var(--border-primary);
@@ -195,10 +127,8 @@ onMounted(loadPending)
 }
 
 @media (max-width: 760px) {
-  .admin-cards {
-    grid-template-columns: 1fr;
-  }
-
+  .admin-link { grid-template-columns: 26px minmax(0, 1fr) auto; }
+  .admin-link .product-row__action, .admin-link > span:last-child { display: none; }
   .review-list__item {
     grid-template-columns: 1fr;
   }

@@ -1,9 +1,29 @@
 const skillModel = require('../models/skillModel')
 const growthModel = require('../models/growthModel')
+const learningModel = require('../models/learningModel')
 
 exports.list = (req, res) => {
   const { category = 'all' } = req.query
+  const meta = learningModel.getCatalogMeta(req.user.userId)
   const data = skillModel.findAll(category)
+    .filter(skill => req.user.accountType === 'admin' || skill.course_status !== 'draft')
+    .map(skill => {
+    let chapters = []
+    try { chapters = JSON.parse(skill.chapters || '[]') } catch {}
+    const learning = meta[skill.id] || {}
+    return {
+      ...skill,
+      chapters,
+      chapterCount: chapters.length,
+      moduleCount: learning.module_count || 0,
+      lessonCount: learning.lesson_count || chapters.length,
+      interactiveCount: learning.interactive_count || 0,
+      enrollmentStatus: learning.enrollment_status || null,
+      activeLessonId: learning.active_lesson_id || null,
+      completedLessons: learning.completed_lessons || 0,
+      masteryScore: learning.mastery_score || 0
+    }
+    })
   res.json({ success: true, data })
 }
 
@@ -15,7 +35,9 @@ exports.search = (req, res) => {
 
 exports.detail = (req, res) => {
   const skill = skillModel.findById(+req.params.id)
-  if (!skill) return res.status(404).json({ success: false, message: '技能不存在' })
+  if (!skill || (skill.course_status === 'draft' && req.user.accountType !== 'admin')) {
+    return res.status(404).json({ success: false, message: '课程不存在或尚未发布' })
+  }
   res.json({ success: true, data: skill })
 }
 

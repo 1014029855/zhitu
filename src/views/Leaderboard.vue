@@ -1,9 +1,12 @@
 <template>
-  <section class="page">
-    <header class="page__header">
-      <p class="section-label">Leaderboard</p>
-      <h1 class="page__title">排行榜</h1>
-      <p class="page__desc">通过题数、提交量、正确率，看见训练进度。</p>
+  <section class="product-page leaderboard-page">
+    <header class="product-header page__header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">训练证据</p>
+        <h1 class="page__title">排行榜</h1>
+        <p class="page__desc">通过题数、提交量和正确率只反映训练表现，不替代课程掌握度。</p>
+        <div class="product-header__meta"><span>每次提交更新</span><span>{{ users.length }} 名学习者</span></div>
+      </div>
     </header>
 
     <div class="podium">
@@ -56,23 +59,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 40px;
-  background: var(--bg-primary);
-}
-
 .page__header {
-  margin-bottom: 40px;
+  margin-bottom: 34px;
 }
 
 .page__title {
   font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
+  font-size: 29px;
+  font-weight: 760;
+  letter-spacing: 0;
   margin-bottom: 8px;
   color: var(--text-primary);
 }
@@ -103,7 +98,7 @@ onMounted(async () => {
 }
 
 .podium__card--first {
-  background: var(--bg-secondary);
+  background: var(--brand-green-light);
 }
 
 .podium__rank {

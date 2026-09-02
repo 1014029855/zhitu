@@ -1,9 +1,11 @@
 <template>
-  <section class="page">
-    <header class="page__header">
-      <p class="section-label">Teacher Desk</p>
-      <h1 class="page__title">教师中心</h1>
-      <p class="page__desc">提交竞赛、技能课程或论文资源，等待管理员审核后进入平台。</p>
+  <section class="product-page teacher-page">
+    <header class="product-header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">内容提交</p>
+        <h1>教师中心</h1>
+        <p>提交竞赛、课程或论文资源，审核通过后进入平台。</p>
+      </div>
     </header>
 
     <div class="teacher-layout">
@@ -82,37 +84,13 @@ onMounted(loadSubmissions)
 </script>
 
 <style scoped>
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 40px;
-  min-height: 100vh;
-  background: var(--bg-primary);
-}
-
-.page__header {
-  margin-bottom: 40px;
-}
-
-.page__title {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
-  margin-bottom: 8px;
-  color: var(--text-primary);
-}
-
-.page__desc {
-  font-size: 14px;
-  color: var(--text-tertiary);
-  margin-bottom: 0;
-}
+.teacher-page { max-width: 1080px; }
 
 .teacher-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 40px;
+  padding-top: 32px;
 }
 
 .submit-form {

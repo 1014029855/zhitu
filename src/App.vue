@@ -1,5 +1,5 @@
 <template>
-  <AppSidebar v-if="!route.meta.hideShell" />
+  <LearningTopNav v-if="!route.meta.hideShell && route.meta.requiresAuth" />
   <main :class="['app-main', { 'app-main--full': route.meta.hideShell }]">
     <router-view v-slot="{ Component }">
       <Transition name="page" mode="out-in">
@@ -12,7 +12,7 @@
 
 <script setup>
 import { useRoute } from 'vue-router'
-import AppSidebar from './components/AppSidebar.vue'
+import LearningTopNav from './components/course/LearningTopNav.vue'
 import ToastMessage from './components/ToastMessage.vue'
 
 const route = useRoute()
@@ -29,7 +29,7 @@ const route = useRoute()
 <style scoped>
 .app-main {
   min-height: 100vh;
-  margin-left: var(--sidebar-width);
+  margin-left: 0;
   background: var(--bg-primary);
 }
 .app-main--full {

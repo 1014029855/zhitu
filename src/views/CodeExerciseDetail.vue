@@ -142,14 +142,14 @@ async function submitCode() {
 
 <style scoped>
 .exercise-detail {
-  min-height: 100vh;
+  min-height: calc(100vh - 60px);
   background: var(--bg-primary);
 }
 
 .exercise-detail__layout {
   display: grid;
   grid-template-columns: minmax(320px, 0.42fr) minmax(0, 0.58fr);
-  min-height: 100vh;
+  min-height: calc(100vh - 60px);
 }
 
 .problem-panel {
@@ -202,7 +202,7 @@ async function submitCode() {
   font-size: 28px;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
   margin: 0;
   color: var(--text-primary);
 }

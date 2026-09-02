@@ -1,16 +1,16 @@
 <template>
-  <div class="page">
-    <!-- Hero -->
-    <section class="hero gradient-accent">
-      <div class="blur-orb blur-orb--green" style="width:200px;height:200px;top:-50px;right:-40px;opacity:0.2;"></div>
-      <p class="section-label">Research Shelf</p>
-      <h1 class="page-heading" style="font-size:32px;">论文资源</h1>
-      <p class="page-subtitle" style="margin-top:6px;">本地 6 篇 + 外部检索 — 输入关键词自动搜索，新标签页打开原文。</p>
-    </section>
+  <div class="product-page papers-page">
+    <header class="product-header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">研究资料</p>
+        <h1>论文资源</h1>
+        <p>从研究问题进入摘要、证据与原文。外部检索只在你主动发起时运行。</p>
+        <div class="product-header__meta"><span>本地精选</span><span>Semantic Scholar</span><span>引用追踪</span></div>
+      </div>
+    </header>
 
-    <section class="section">
-      <!-- Search bar -->
-      <div class="toolbar">
+    <section>
+      <div class="product-toolbar papers-toolbar">
         <div class="search-box">
           <Search :size="18" :stroke-width="1.5" class="search-box__icon" />
           <input
@@ -26,6 +26,7 @@
           <Globe :size="16" :stroke-width="1.5" />
           {{ loading ? '检索中...' : '外部检索' }}
         </button>
+        <span class="product-toolbar__count">{{ papers.length }} 篇结果</span>
       </div>
 
       <!-- Source hint -->
@@ -40,48 +41,28 @@
         <p class="empty-state__desc">正在检索论文...</p>
       </div>
 
-      <!-- Paper cards -->
-      <div v-else class="paper-grid">
-        <div
+      <div v-else class="product-list paper-list">
+        <article
           v-for="(paper, i) in papers"
           :key="paper.id"
-          class="card paper-card"
-          :class="`animate-fade-up animate-fade-up--${Math.min(i + 1, 4)}`"
+          class="product-row paper-row"
         >
-          <div class="paper-card__top">
-            <span class="paper-card__source" :class="`paper-card__source--${paper.sourceType}`">
-              {{ paper.displaySource }}
-            </span>
-            <span class="paper-card__year">{{ paper.year || '—' }}</span>
-            <span v-if="paper.citations" class="paper-card__cites">{{ paper.citations }} 引用</span>
-          </div>
-
-          <h2 class="paper-card__title">
-            <router-link :to="`/papers/${paper.id}`">
-              {{ paper.title }}
-            </router-link>
-          </h2>
-
-          <p class="paper-card__abstract">{{ paper.shortAbstract || paper.abstract?.slice(0, 200) || '暂无摘要' }}</p>
-
-          <div class="paper-card__footer">
-            <span class="paper-card__authors">{{ paper.authors || '未知作者' }}</span>
-            <router-link :to="`/papers/${paper.id}`" class="paper-card__link">
-              <ArrowRight :size="14" :stroke-width="1.5" />
-              详情
-            </router-link>
+          <span class="product-row__index">{{ String(i + 1).padStart(2, '0') }}</span>
+          <span class="paper-row__source" :class="`paper-row__source--${paper.sourceType}`">{{ paper.displaySource }}</span>
+          <span class="product-row__main"><strong>{{ paper.title }}</strong><p>{{ paper.shortAbstract || paper.abstract?.slice(0, 200) || '暂无摘要' }}</p><small>{{ paper.authors || '未知作者' }}</small></span>
+          <span class="product-row__meta">{{ paper.year || '—' }}</span>
+          <span class="product-row__meta">{{ paper.citations || 0 }} 引用</span>
+          <span class="paper-row__actions">
+            <router-link :to="`/papers/${paper.id}`" title="查看详情"><ArrowRight :size="16" /></router-link>
             <a
               v-if="paper.isExternal && paper.url"
               :href="paper.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="paper-card__link"
-            >
-              <ExternalLink :size="14" :stroke-width="1.5" />
-              原文
-            </a>
-          </div>
-        </div>
+              title="打开原文"
+            ><ExternalLink :size="15" /></a>
+          </span>
+        </article>
       </div>
 
       <!-- Empty -->
@@ -167,9 +148,13 @@ async function doExternalSearch() {
 }
 
 function enrich(p) {
+  const abstract = plainText(p.abstract)
   return {
     ...p,
-    shortAbstract: (p.abstract || '').slice(0, 200),
+    title: plainText(p.title),
+    authors: plainText(p.authors),
+    abstract,
+    shortAbstract: abstract.slice(0, 200),
     displaySource: p.source || (p.paper_source === 'external' ? '外部检索' : '本地'),
     sourceType: (p.paper_source === 'external' || p.source === 'Semantic Scholar' || p.source === 'CORE' || p.source === 'OpenAlex') ? 'external' : 'local',
     isExternal: (p.paper_source === 'external' || ['Semantic Scholar','CORE','OpenAlex'].includes(p.source)),
@@ -177,26 +162,26 @@ function enrich(p) {
   }
 }
 
+function plainText(value) {
+  if (!value) return ''
+  return new DOMParser().parseFromString(String(value), 'text/html').body.textContent || ''
+}
+
 onMounted(loadLocal)
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: var(--bg-primary); }
-.hero { position: relative; overflow: hidden; padding: 48px 40px 40px; }
-.section { max-width: 1080px; margin: 0 auto; padding: 0 40px 56px; }
-
-/* toolbar */
-.toolbar { display: flex; gap: 12px; margin-bottom: 20px; margin-top: -20px; position: relative; z-index: 2; }
+.papers-toolbar { align-items: center; }
 .search-box { flex: 1; position: relative; display: flex; align-items: center; }
 .search-box__icon { position: absolute; left: 14px; color: var(--text-muted); pointer-events: none; }
 .search-box__input {
-  width: 100%; height: 44px; padding: 0 40px 0 42px;
-  border: 1px solid var(--border-primary); border-radius: var(--radius-pill);
+  width: 100%; height: 34px; padding: 0 40px 0 38px;
+  border: 1px solid var(--border-primary); border-radius: 4px;
   background: var(--bg-white); font-size: 14px; color: var(--text-primary);
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.search-box__input:focus { border-color: var(--brand-green); box-shadow: 0 0 0 3px rgba(136,190,92,0.15); }
-.search-box__clear { position: absolute; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: var(--bg-secondary); color: var(--text-muted); font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.search-box__input:focus { border-color: var(--brand-blue); }
+.search-box__clear { position: absolute; right: 6px; width: 24px; height: 24px; border-radius: 3px; background: var(--bg-secondary); color: var(--text-muted); font-size: 16px; display: flex; align-items: center; justify-content: center; }
 .search-box__clear:hover { background: var(--border-primary); color: var(--text-primary); }
 
 /* meta bar */
@@ -206,41 +191,16 @@ onMounted(loadLocal)
 .meta-bar__badge--external { background: var(--brand-green-light); color: var(--brand-green-dark); }
 .meta-bar__hint { color: var(--text-muted); }
 
-/* paper cards */
-.paper-grid { display: flex; flex-direction: column; gap: 14px; }
-.paper-card { padding: 24px; display: flex; flex-direction: column; gap: 10px; }
-.paper-card__top { display: flex; align-items: center; gap: 10px; font-size: 12px; }
-.paper-card__source { padding: 3px 10px; border-radius: var(--radius-pill); font-weight: 600; font-size: 11px; }
-.paper-card__source--local { background: var(--bg-secondary); color: var(--text-secondary); }
-.paper-card__source--external { background: var(--brand-green-light); color: var(--brand-green-dark); }
-.paper-card__year { color: var(--text-muted); }
-.paper-card__cites { color: var(--brand-green-dark); font-weight: 600; }
-
-.paper-card__title {
-  font-family: var(--font-heading); font-size: 18px; font-weight: 700;
-  color: var(--text-primary); line-height: 1.3; margin: 0;
-}
-.paper-card__title a { color: inherit; }
-.paper-card__title a:hover { color: var(--brand-green-dark); }
-
-.paper-card__abstract {
-  font-size: 13px; color: var(--text-secondary); line-height: 1.6;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-  overflow: hidden; margin: 0;
-}
-
-.paper-card__footer { display: flex; align-items: center; gap: 16px; }
-.paper-card__authors { font-size: 12px; color: var(--text-muted); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.paper-card__link {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 600; color: var(--brand-green-dark);
-  white-space: nowrap; transition: color 0.15s;
-}
-.paper-card__link:hover { color: var(--accent-hover); }
+.paper-row { grid-template-columns: 34px 92px minmax(0, 1fr) 54px 70px 52px; min-height: 105px; }
+.paper-row__source { display: inline-flex; justify-content: center; padding: 4px 6px; border: 1px solid #d9ded9; border-radius: 3px; color: #5d655e; font-size: 9px; font-weight: 700; }
+.paper-row__source--external { border-color: #c7d8ef; background: #f1f6fc; color: #1769d1; }
+.paper-row .product-row__main small { display: block; overflow: hidden; margin-top: 5px; color: #8a918b; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.paper-row__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.paper-row__actions a { display: grid; place-items: center; width: 22px; height: 28px; color: #7e877f; }
+.paper-row__actions a:hover { color: #159447; }
 
 @media (max-width: 780px) {
-  .section { padding: 0 20px 40px; }
-  .hero { padding: 40px 20px 36px; }
-  .toolbar { flex-direction: column; }
+  .paper-row { grid-template-columns: 26px minmax(0, 1fr) 44px; }
+  .paper-row > :nth-child(2), .paper-row > :nth-child(4), .paper-row > :nth-child(5) { display: none; }
 }
 </style>

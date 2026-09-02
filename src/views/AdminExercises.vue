@@ -1,9 +1,11 @@
 <template>
-  <section class="page">
-    <header class="page__header">
-      <p class="section-label">Exercise Ops</p>
-      <h1 class="page__title">题库管理</h1>
-      <p class="page__desc">按知识点起草题目，检查难度、语言和题库覆盖。</p>
+  <section class="product-page admin-exercises">
+    <header class="product-header">
+      <div class="product-header__copy">
+        <p class="product-header__eyebrow">题库维护</p>
+        <h1>题库管理</h1>
+        <p>按知识点起草题目，检查难度、语言和题库覆盖。</p>
+      </div>
     </header>
 
     <div class="generator">
@@ -87,37 +89,13 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 40px;
-  min-height: 100vh;
-  background: var(--bg-secondary);
-}
-
-.page__header {
-  margin-bottom: 32px;
-}
-
-.page__title {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
-  margin-bottom: 8px;
-}
-
-.page__desc {
-  font-size: 14px;
-  color: var(--text-tertiary);
-  margin-bottom: 0;
-}
+.admin-exercises { max-width: 1080px; }
 
 .generator {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 130px 130px 120px;
   gap: 12px;
-  margin-bottom: 32px;
+  margin: 28px 0 32px;
 }
 
 .gen-result {
@@ -125,7 +103,7 @@ onMounted(loadData)
   gap: 8px;
   margin-bottom: 32px;
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   padding: 24px;
   background: var(--bg-secondary);
   color: var(--text-primary);
@@ -134,7 +112,7 @@ onMounted(loadData)
 .gen-result__label {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--brand-green);
 }
 
 .gen-result__title {
@@ -148,7 +126,7 @@ onMounted(loadData)
 .gen-result__desc {
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-secondary);
   margin: 0;
 }
 
